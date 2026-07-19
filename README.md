@@ -8,6 +8,8 @@ Sky Overhead reads your current location, queries live ADS-B traffic near you,
 ranks the candidates by how close they are to being directly overhead, and shows
 the best match enriched with route and registration details.
 
+<a href="skyoverhead.png"><img src="skyoverhead.png" alt="Sky Overhead screenshot" width="300"></a>
+
 ## How it works
 
 1. Resolve the observer's position via device GPS (`geolocator`).
