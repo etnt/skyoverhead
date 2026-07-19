@@ -101,6 +101,48 @@ flutter run -d <deviceId>  # target a specific device (see: flutter devices)
 On first launch the app will ask for **location permission** — allow it so the
 observer position can be resolved.
 
+## Running on a physical iOS phone
+
+Deploying to an iPhone requires a **Mac with Xcode** installed (plus its
+command-line tools and CocoaPods).
+
+1. **Sign in with an Apple ID in Xcode**: Xcode → Settings → Accounts → add your
+   Apple ID. A free Apple ID works for on-device development (with a 7-day
+   signing validity); a paid Apple Developer account removes that limit.
+2. **Set the signing team** for the app. Either open the iOS project in Xcode:
+
+   ```bash
+   open ios/Runner.xcworkspace
+   ```
+
+   then select the **Runner** target → **Signing & Capabilities** → pick your
+   **Team** and let Xcode manage signing. Xcode will assign a unique bundle
+   identifier if the default is taken.
+3. **Connect the iPhone** with a cable and **trust the computer**: on the phone,
+   tap **Trust** on the *Trust This Computer?* prompt and enter your passcode.
+4. **Enable Developer Mode** (iOS 16+): Settings → Privacy & Security →
+   **Developer Mode** → on, then restart the phone when prompted.
+5. **Verify the device is detected**:
+
+   ```bash
+   flutter devices    # should list your iPhone
+   ```
+
+6. **Build, install, and launch** on the phone:
+
+   ```bash
+   flutter run -d <deviceId>   # deviceId from `flutter devices`
+   ```
+
+   The first build is slower (CocoaPods + native compile) and starts a live
+   debug session (hot reload with `r`, hot restart with `R`).
+7. **Trust the developer certificate on the phone** the first time you launch a
+   build signed with a personal team: Settings → General → **VPN & Device
+   Management** → tap your developer profile → **Trust**. Then reopen the app.
+
+On first launch the app will ask for **location permission** — allow it so the
+observer position can be resolved.
+
 ## Testing
 
 ```bash
@@ -119,3 +161,14 @@ Both are declared in the Android and iOS platform manifests.
 
 - Aircraft states: [OpenSky Network REST API](https://openskynetwork.github.io/opensky-api/rest.html)
 - Aircraft/route metadata: [ADSBDB API](https://www.adsbdb.com/)
+
+## Related project
+
+The elevation-angle geometry and candidate-ranking logic mirror the
+[`aircraft_id`](https://github.com/etnt/aircraft-identification) Erlang library,
+which answers the same "which aircraft is overhead?" question as an embeddable,
+dependency-free library.
+
+## License
+
+[MPL-2.0](LICENSE).
