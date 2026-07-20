@@ -10,6 +10,25 @@ the best match enriched with route and registration details.
 
 <a href="skyoverhead.png"><img src="skyoverhead.png" alt="Sky Overhead screenshot" width="300"></a>
 
+## Download & install (Android)
+
+Prebuilt Android APKs are published on the repository's
+[**Releases**](../../releases) page, built automatically by GitHub Actions.
+
+1. Open the latest release and download **`app-release.apk`** (the universal
+   build that works on any device). Advanced users can instead pick the smaller
+   ABI-specific APK matching their phone (`arm64-v8a`, `armeabi-v7a`, or
+   `x86_64`).
+2. On the phone, allow **Install unknown apps** for your browser or file
+   manager when prompted.
+3. Open the downloaded APK and confirm installation.
+4. Launch the app and **allow location permission** so the observer position can
+   be resolved.
+
+> **iPhone:** direct downloads are not available. Apple does not permit
+> installing apps outside the App Store, so iOS requires building from source on
+> a Mac (see below) or App Store distribution.
+
 ## How it works
 
 1. Resolve the observer's position via device GPS (`geolocator`).
