@@ -70,6 +70,15 @@ void main() {
       );
     });
 
+    test('maps 503 to openskyUnavailable', () async {
+      final client = OpenSkyClient(FakeTransport.json(503, ''));
+      expect(
+        () => client.fetchStates(config),
+        throwsA(isA<IdentifyException>().having(
+            (e) => e.code, 'code', IdentifyError.openskyUnavailable)),
+      );
+    });
+
     test('maps a transport timeout to openskyTimeout', () async {
       final client = OpenSkyClient(
         FakeTransport.fail(

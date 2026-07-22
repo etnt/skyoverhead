@@ -8,6 +8,7 @@ enum IdentifyError {
   openskyTimeout,
   openskyRateLimited,
   openskyUnauthorized,
+  openskyUnavailable,
   openskyBadResponse,
 }
 
@@ -38,6 +39,8 @@ String messageForError(IdentifyError code) {
       return 'The aircraft service is rate limiting requests. Try again shortly.';
     case IdentifyError.openskyUnauthorized:
       return 'The aircraft service rejected the request.';
+    case IdentifyError.openskyUnavailable:
+      return 'The aircraft service is temporarily unavailable. Try again later.';
     case IdentifyError.openskyBadResponse:
       return 'The aircraft service returned an invalid response.';
   }

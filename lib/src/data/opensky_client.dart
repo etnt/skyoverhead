@@ -88,6 +88,8 @@ class OpenSkyClient {
         throw const IdentifyException(IdentifyError.openskyUnauthorized);
       case 429:
         throw const IdentifyException(IdentifyError.openskyRateLimited);
+      case 503:
+        throw const IdentifyException(IdentifyError.openskyUnavailable);
       default:
         throw const IdentifyException(IdentifyError.openskyBadResponse);
     }
