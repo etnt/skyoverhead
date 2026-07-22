@@ -39,6 +39,22 @@ jobs:
       - name: Run tests
         run: flutter test
 
+      - name: Decode release keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+        run: echo "$KEYSTORE_BASE64" | base64 --decode > android/release-keystore.jks
+
+      - name: Create key.properties
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+        run: |
+          cat > android/key.properties <<EOF
+          storePassword=$KEYSTORE_PASSWORD
+          keyPassword=$KEYSTORE_PASSWORD
+          keyAlias=release
+          storeFile=../release-keystore.jks
+          EOF
+
       - name: Build split-per-ABI APKs
         run: flutter build apk --release --split-per-abi --dart-define=APP_VERSION=${{ github.ref_name }}
 
