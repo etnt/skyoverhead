@@ -5,6 +5,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../config/app_version.dart';
 import '../state/config_provider.dart';
 import '../state/identify_controller.dart';
 import 'location_bar.dart';
@@ -22,7 +23,17 @@ class HomeScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Sky Overhead'),
+        title: const Text.rich(
+          TextSpan(
+            text: 'Sky Overhead',
+            children: [
+              TextSpan(
+                text: '  $appVersion',
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w300),
+              ),
+            ],
+          ),
+        ),
         actions: [
           IconButton(
             tooltip: 'Settings',
