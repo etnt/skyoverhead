@@ -172,6 +172,35 @@ flutter test                   # unit and widget tests
 flutter test integration_test  # end-to-end integration test
 ```
 
+## Release signing
+
+Release APKs are signed with a persistent keystore so that updates can be
+installed over previous versions without conflicts. The signing key is stored as
+GitHub Actions secrets and decoded at build time.
+
+**Repository secrets required** (Settings → Secrets and variables → Actions):
+
+| Secret              | Value                                            |
+|---------------------|--------------------------------------------------|
+| `KEYSTORE_BASE64`   | The release keystore, base64-encoded: `base64 -i android/release-keystore.jks` |
+| `KEYSTORE_PASSWORD` | Password for both the keystore and the key alias |
+
+The Gradle build reads `android/key.properties` when present; the workflow
+creates that file from secrets before building. Locally, if `key.properties`
+does not exist, the build falls back to the debug signing key.
+
+**Generating a new keystore** (only needed if the original is lost):
+
+```bash
+keytool -genkey -v \
+  -keystore android/release-keystore.jks \
+  -keyalg RSA -keysize 2048 -validity 10000 \
+  -alias release
+```
+
+> **Important:** If you replace the keystore, users must uninstall the old app
+> before installing a new build (the signatures will no longer match).
+
 ## Permissions
 
 The app requests **location** access at first launch to determine the observer
