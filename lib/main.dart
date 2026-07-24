@@ -3,7 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'src/data/preferences_store.dart';
+import 'src/data/sighting_store.dart';
+import 'src/domain/sighting.dart';
 import 'src/state/collector_provider.dart';
+import 'src/state/sighting_logger.dart';
 import 'src/ui/home_screen.dart';
 
 Future<void> main() async {
@@ -14,6 +17,13 @@ Future<void> main() async {
       overrides: [
         collectorPreferencesProvider.overrideWithValue(
           SharedPrefsCollectorPreferences(prefs),
+        ),
+        sightingStoreProvider.overrideWithValue(
+          SharedPrefsSightingStore<Sighting>(
+            prefs: prefs,
+            toJson: (s) => s.toJson(),
+            fromJson: Sighting.fromJson,
+          ),
         ),
       ],
       child: const SkyOverheadApp(),

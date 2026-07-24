@@ -92,3 +92,25 @@ class SharedPrefsSightingStore<T> extends SightingStore<T> {
     notifyListeners();
   }
 }
+
+/// A non-persistent [SightingStore] used as a safe default when no persisted
+/// store has been wired in, and for tests. Items live only in memory.
+class InMemorySightingStore<T> extends SightingStore<T> {
+  final List<T> _items = [];
+
+  @override
+  List<T> get all => List.unmodifiable(_items);
+
+  @override
+  Future<void> add(T item) async {
+    _items.add(item);
+    notifyListeners();
+  }
+
+  @override
+  Future<void> clear() async {
+    if (_items.isEmpty) return;
+    _items.clear();
+    notifyListeners();
+  }
+}

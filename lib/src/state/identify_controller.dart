@@ -12,6 +12,7 @@ import '../config/identify_config.dart';
 import '../data/aircraft_service.dart';
 import '../data/errors.dart';
 import '../domain/models.dart';
+import 'sighting_logger.dart';
 
 /// UI-facing state for the home screen.
 sealed class IdentifyUiState {
@@ -45,7 +46,12 @@ class IdentifyFailure extends IdentifyUiState {
 class IdentifyController extends StateNotifier<IdentifyUiState> {
   final AircraftService _service;
 
-  IdentifyController(this._service) : super(const IdentifyIdle());
+  /// Optional sink for successful identifications; when null (or collecting is
+  /// off) identification behaves exactly as before, with no logging.
+  final SightingLogger? logger;
+
+  IdentifyController(this._service, {this.logger})
+      : super(const IdentifyIdle());
 
   /// Run an identification for [config], ignoring re-entrant taps while a
   /// request is already in flight.
@@ -66,6 +72,9 @@ class IdentifyController extends StateNotifier<IdentifyUiState> {
       return;
     }
 
+    // Persist the sighting when collecting is enabled (no-op otherwise).
+    await logger?.logResult(result);
+
     state = IdentifySuccess(result);
   }
 
@@ -81,5 +90,8 @@ final aircraftServiceProvider = Provider<AircraftService>((ref) {
 /// The controller the home screen watches.
 final identifyControllerProvider =
     StateNotifierProvider<IdentifyController, IdentifyUiState>((ref) {
-  return IdentifyController(ref.watch(aircraftServiceProvider));
+  return IdentifyController(
+    ref.watch(aircraftServiceProvider),
+    logger: ref.watch(sightingLoggerProvider),
+  );
 });

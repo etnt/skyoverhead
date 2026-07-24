@@ -65,13 +65,16 @@ void main() {
       expect(prefs.collectorPaused, isTrue);
     });
 
-    test('reading preferences without an override throws', () {
+    test('defaults to a disabled in-memory implementation without an override',
+        () {
       final container = ProviderContainer();
       addTearDown(container.dispose);
-      expect(
-        () => container.read(collectorPreferencesProvider),
-        throwsUnimplementedError,
-      );
+
+      final prefs = container.read(collectorPreferencesProvider);
+      expect(prefs.collectorEnabled, isFalse);
+      expect(prefs.collectorPaused, isFalse);
+      expect(container.read(collectorEnabledProvider), isFalse);
+      expect(container.read(collectorPausedProvider), isFalse);
     });
   });
 }

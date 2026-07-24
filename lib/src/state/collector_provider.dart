@@ -1,8 +1,9 @@
 /// Riverpod wiring for the collector opt-in flags (Phase 0).
 ///
-/// [collectorPreferencesProvider] must be overridden in `main()` with a
-/// concrete [CollectorPreferences] once `SharedPreferences` has loaded; it
-/// throws if read without an override so a missing wiring fails loudly.
+/// [collectorPreferencesProvider] defaults to a non-persistent, disabled
+/// implementation so that, if it is never overridden, collecting is simply off
+/// (privacy-first) rather than erroring. `main()` overrides it with a
+/// `SharedPreferences`-backed implementation once storage has loaded.
 ///
 /// [collectorEnabledProvider] and [collectorPausedProvider] expose each flag as
 /// a mutable `bool` the UI can watch and toggle; writes are persisted through
@@ -13,13 +14,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/preferences_store.dart';
 
-/// Supplies the persisted preferences implementation. Override in `main()`
-/// (and in tests) with a concrete [CollectorPreferences].
+/// Supplies the persisted preferences implementation. Defaults to a disabled
+/// in-memory implementation; override in `main()` with a concrete persisted
+/// [CollectorPreferences].
 final collectorPreferencesProvider = Provider<CollectorPreferences>((ref) {
-  throw UnimplementedError(
-    'collectorPreferencesProvider must be overridden with a concrete '
-    'CollectorPreferences (see main()).',
-  );
+  return InMemoryCollectorPreferences();
 });
 
 /// Master collector switch. Default `false` (identify-only).

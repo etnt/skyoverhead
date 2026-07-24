@@ -54,3 +54,25 @@ class SharedPrefsCollectorPreferences implements CollectorPreferences {
   Future<void> setCollectorPaused(bool value) =>
       _prefs.setBool(pausedKey, value);
 }
+
+/// A non-persistent [CollectorPreferences] used as a safe default when no
+/// persisted implementation has been wired in (e.g. in tests, or before
+/// `main()` runs its override). Collecting is off, so nothing is gathered.
+class InMemoryCollectorPreferences implements CollectorPreferences {
+  bool enabled;
+  bool paused;
+
+  InMemoryCollectorPreferences({this.enabled = false, this.paused = false});
+
+  @override
+  bool get collectorEnabled => enabled;
+
+  @override
+  bool get collectorPaused => paused;
+
+  @override
+  Future<void> setCollectorEnabled(bool value) async => enabled = value;
+
+  @override
+  Future<void> setCollectorPaused(bool value) async => paused = value;
+}
