@@ -269,4 +269,36 @@ void main() {
       );
     });
   });
+
+  group('Medals tab', () {
+    testWidgets('appears when Collector mode is on', (tester) async {
+      await _pumpApp(tester, enabled: true);
+      expect(find.text('Medals'), findsOneWidget);
+    });
+
+    testWidgets('reflects seeded sightings in tiers and collections',
+        (tester) async {
+      await _pumpApp(
+        tester,
+        enabled: true,
+        seed: [
+          _sighting(
+            icao24: 'aa0001',
+            destination: const Airport(icao: 'ESSA', iata: 'ARN'),
+          ),
+        ],
+      );
+
+      await tester.tap(find.text('Medals'));
+      await tester.pumpAndSettle();
+
+      // Ace ladder first tier is earned with a single destination.
+      expect(find.text('Cadet'), findsOneWidget);
+      expect(find.text('Earned'), findsWidgets);
+      // Collections summary chip is present.
+      expect(find.text('Destinations'), findsOneWidget);
+      // A locked tier shows numeric progress toward its target.
+      expect(find.textContaining('/ 5'), findsWidgets);
+    });
+  });
 }
