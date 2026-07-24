@@ -7,7 +7,7 @@ import 'src/data/sighting_store.dart';
 import 'src/domain/sighting.dart';
 import 'src/state/collector_provider.dart';
 import 'src/state/sighting_logger.dart';
-import 'src/ui/home_screen.dart';
+import 'src/ui/app_shell.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -50,7 +50,7 @@ class SkyOverheadApp extends StatelessWidget {
         ),
         useMaterial3: true,
       ),
-      home: const HomeScreen(),
+      home: const AppShell(),
     );
   }
 }

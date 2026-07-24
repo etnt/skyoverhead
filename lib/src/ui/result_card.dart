@@ -7,13 +7,17 @@ import '../domain/models.dart';
 import 'format.dart' as fmt;
 
 class ResultCard extends StatelessWidget {
-  final IdentifyResult result;
+  final Candidate candidate;
+  final Confidence confidence;
 
-  const ResultCard({super.key, required this.result});
+  const ResultCard({
+    super.key,
+    required this.candidate,
+    required this.confidence,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final candidate = result.candidate!;
     final theme = Theme.of(context);
     final subtitle = fmt.aircraftSubtitle(candidate);
     final origin = fmt.airportLabel(candidate.origin);
@@ -49,7 +53,7 @@ class ResultCard extends StatelessWidget {
                             ?.copyWith(fontWeight: FontWeight.bold),
                       ),
                     ),
-                    _ConfidenceBadge(confidence: result.confidence),
+                    _ConfidenceBadge(confidence: confidence),
                   ],
                 ),
                 if (operator != null && operator.isNotEmpty) ...[

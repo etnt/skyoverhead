@@ -102,7 +102,12 @@ class _ResultArea extends ConsumerWidget {
           return SingleChildScrollView(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [ResultCard(result: result)],
+              children: [
+                ResultCard(
+                  candidate: result.candidate!,
+                  confidence: result.confidence,
+                ),
+              ],
             ),
           );
         }

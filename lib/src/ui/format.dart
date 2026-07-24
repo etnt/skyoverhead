@@ -129,3 +129,12 @@ String confidenceLabel(Confidence confidence) {
       return 'No match';
   }
 }
+
+/// A compact local date-time label for a captured sighting, e.g.
+/// "2026-07-24 14:30". Zero-padded so rows align and sort naturally.
+String sightingTimestamp(DateTime capturedAt) {
+  final t = capturedAt.toLocal();
+  String two(int n) => n.toString().padLeft(2, '0');
+  return '${t.year}-${two(t.month)}-${two(t.day)} '
+      '${two(t.hour)}:${two(t.minute)}';
+}

@@ -85,6 +85,30 @@ class Sighting {
     );
   }
 
+  /// Rebuild a [Candidate] view of this sighting so display code (formatters,
+  /// `ResultCard`) can be reused. Fields that are not persisted (altitude
+  /// source, position age, track) take neutral defaults.
+  Candidate toCandidate() => Candidate(
+        icao24: icao24,
+        callsign: callsign,
+        registration: registration,
+        manufacturer: manufacturer,
+        model: model,
+        airline: airline,
+        registeredOwnerOperator: registeredOwnerOperator,
+        origin: origin,
+        destination: destination,
+        altitudeM: altitudeM,
+        altitudeSource: AltitudeSource.none,
+        distanceKm: distanceKm,
+        bearingDeg: bearingDeg,
+        elevationDeg: elevationDeg,
+        speedMps: speedMps,
+        positionAgeS: 0,
+        photoUrl: photoUrl,
+        enrichmentStatus: enrichmentStatus,
+      );
+
   Map<String, dynamic> toJson() => {
         'capturedAt': capturedAt.toIso8601String(),
         'icao24': icao24,

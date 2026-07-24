@@ -28,6 +28,18 @@ final sightingStoreProvider = Provider<SightingStore<Sighting>>((ref) {
   return InMemorySightingStore<Sighting>();
 });
 
+/// The stored sightings in reverse-chronological order (newest first).
+///
+/// Rebuilds whenever the underlying store notifies, so the Logbook stays in
+/// sync as sightings are logged or the store is cleared.
+final sightingsProvider = Provider<List<Sighting>>((ref) {
+  final store = ref.watch(sightingStoreProvider);
+  void onChange() => ref.invalidateSelf();
+  store.addListener(onChange);
+  ref.onDispose(() => store.removeListener(onChange));
+  return store.all.reversed.toList(growable: false);
+});
+
 /// The logger wired to the current store and opt-in flags. Flags are read at
 /// log time so runtime toggles take effect without rebuilding the logger.
 final sightingLoggerProvider = Provider<SightingLogger>((ref) {
