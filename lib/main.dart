@@ -1,10 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
+import 'src/data/preferences_store.dart';
+import 'src/state/collector_provider.dart';
 import 'src/ui/home_screen.dart';
 
-void main() {
-  runApp(const ProviderScope(child: SkyOverheadApp()));
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final prefs = await SharedPreferences.getInstance();
+  runApp(
+    ProviderScope(
+      overrides: [
+        collectorPreferencesProvider.overrideWithValue(
+          SharedPrefsCollectorPreferences(prefs),
+        ),
+      ],
+      child: const SkyOverheadApp(),
+    ),
+  );
 }
 
 class SkyOverheadApp extends StatelessWidget {
