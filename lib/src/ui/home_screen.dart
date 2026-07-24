@@ -6,11 +6,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../config/app_version.dart';
+import '../domain/reward.dart';
 import '../state/config_provider.dart';
 import '../state/identify_controller.dart';
+import '../state/reward_provider.dart';
 import 'location_bar.dart';
 import 'result_card.dart';
 import 'settings_dialog.dart';
+
+/// The most reward snackbars to surface from a single log, to avoid flooding
+/// the Sky tab when a notable first sighting unlocks several things at once.
+const int kMaxRewardSnackbars = 3;
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -20,6 +26,15 @@ class HomeScreen extends ConsumerWidget {
     final state = ref.watch(identifyControllerProvider);
     final config = ref.watch(identifyConfigProvider);
     final isLoading = state is IdentifyLoading;
+
+    ref.listen<List<RewardEvent>>(rewardControllerProvider, (_, next) {
+      if (next.isEmpty) return;
+      final messenger = ScaffoldMessenger.of(context);
+      for (final event in next.take(kMaxRewardSnackbars)) {
+        messenger.showSnackBar(_rewardSnackBar(event));
+      }
+      ref.read(rewardControllerProvider.notifier).clear();
+    });
 
     return Scaffold(
       appBar: AppBar(
@@ -180,4 +195,23 @@ class _Centered extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Build a compact snackbar for a reward, with an icon reflecting its kind.
+SnackBar _rewardSnackBar(RewardEvent event) {
+  final icon = switch (event.kind) {
+    RewardKind.medal => Icons.military_tech,
+    RewardKind.collection => Icons.auto_awesome,
+  };
+  return SnackBar(
+    duration: const Duration(milliseconds: 2500),
+    behavior: SnackBarBehavior.floating,
+    content: Row(
+      children: [
+        Icon(icon, color: Colors.white),
+        const SizedBox(width: 12),
+        Expanded(child: Text(event.message)),
+      ],
+    ),
+  );
 }

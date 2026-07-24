@@ -108,6 +108,7 @@ class _MedalTile extends StatelessWidget {
               earned ? Icons.military_tech : Icons.lock_outline,
               color: accent,
               size: 32,
+              semanticLabel: earned ? 'Earned medal' : 'Locked medal',
             ),
             const SizedBox(height: 8),
             Text(

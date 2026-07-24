@@ -19,8 +19,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/sighting_store.dart';
 import '../domain/models.dart';
+import '../domain/reward.dart';
 import '../domain/sighting.dart';
 import 'collector_provider.dart';
+import 'reward_provider.dart';
 
 /// The concrete sighting store. Defaults to a non-persistent in-memory store;
 /// `main()` overrides it with a `SharedPreferences`-backed implementation.
@@ -47,6 +49,8 @@ final sightingLoggerProvider = Provider<SightingLogger>((ref) {
     store: ref.watch(sightingStoreProvider),
     isEnabled: () => ref.read(collectorEnabledProvider),
     isPaused: () => ref.read(collectorPausedProvider),
+    onReward: (events) =>
+        ref.read(rewardControllerProvider.notifier).emit(events),
   );
 });
 
@@ -61,6 +65,9 @@ class SightingLogger {
   final DateTime Function() now;
   final Duration dedupWindow;
 
+  /// Optional sink for newly-earned rewards detected on each successful log.
+  final void Function(List<RewardEvent>)? onReward;
+
   final Map<String, DateTime> _lastLoggedAt = {};
 
   SightingLogger({
@@ -69,6 +76,7 @@ class SightingLogger {
     required this.isPaused,
     DateTime Function()? now,
     this.dedupWindow = kDefaultDedupWindow,
+    this.onReward,
   }) : now = now ?? DateTime.now;
 
   /// Persist [result] as a [Sighting] if the gate allows it; otherwise no-op.
@@ -86,6 +94,8 @@ class SightingLogger {
       return; // Same aircraft seen again within the window.
     }
 
+    final before =
+        onReward == null ? const <Sighting>[] : List<Sighting>.of(store.all);
     await store.add(
       Sighting.fromCandidate(
         candidate,
@@ -95,6 +105,12 @@ class SightingLogger {
     );
     _lastLoggedAt[candidate.icao24] = timestamp;
     _prune(timestamp);
+
+    final sink = onReward;
+    if (sink != null) {
+      final events = detectRewards(before: before, after: store.all);
+      if (events.isNotEmpty) sink(events);
+    }
   }
 
   /// Drop dedup entries older than the window to keep the map bounded.

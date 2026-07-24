@@ -20,6 +20,20 @@ class _FakeService implements AircraftService {
       IdentifyResult.none(observedAt: DateTime.utc(2026, 7, 18));
 }
 
+class _MatchService implements AircraftService {
+  final Candidate candidate;
+  _MatchService(this.candidate);
+
+  @override
+  Future<IdentifyResult> identify(IdentifyConfig config) async =>
+      IdentifyResult.ok(
+        confidence: Confidence.high,
+        candidate: candidate,
+        alternatives: const [],
+        observedAt: DateTime.utc(2026, 7, 18),
+      );
+}
+
 Candidate _candidate({
   String icao24 = '3c6745',
   String callsign = 'DLH804',
@@ -70,6 +84,7 @@ Future<ProviderContainer> _pumpApp(
   required bool enabled,
   bool paused = false,
   List<Sighting> seed = const [],
+  AircraftService? service,
 }) async {
   final store = InMemorySightingStore<Sighting>();
   for (final s in seed) {
@@ -77,7 +92,7 @@ Future<ProviderContainer> _pumpApp(
   }
   final container = ProviderContainer(
     overrides: [
-      aircraftServiceProvider.overrideWithValue(_FakeService()),
+      aircraftServiceProvider.overrideWithValue(service ?? _FakeService()),
       collectorPreferencesProvider.overrideWithValue(
         FakeCollectorPreferences(enabled: enabled, paused: paused),
       ),
@@ -333,6 +348,76 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('No stats yet'), findsOneWidget);
+    });
+  });
+
+  group('Reward feedback', () {
+    testWidgets('logging a new sighting surfaces reward snackbars',
+        (tester) async {
+      await _pumpApp(
+        tester,
+        enabled: true,
+        service: _MatchService(
+          _candidate(destination: const Airport(icao: 'ESSA', iata: 'ARN')),
+        ),
+      );
+
+      await tester.tap(find.text("What's overhead?"));
+      await tester.pump(); // start the async identify
+      await tester.pump(const Duration(milliseconds: 300)); // settle + emit
+
+      // Snackbars are presented one at a time; the medal (highest priority)
+      // shows first. The full event set is covered by reward_test.dart.
+      expect(find.byType(SnackBar), findsOneWidget);
+      expect(find.textContaining('New medal: Cadet'), findsOneWidget);
+    });
+
+    testWidgets('no reward snackbar when Collector mode is off',
+        (tester) async {
+      await _pumpApp(
+        tester,
+        enabled: false,
+        service: _MatchService(
+          _candidate(destination: const Airport(icao: 'ESSA', iata: 'ARN')),
+        ),
+      );
+
+      await tester.tap(find.text("What's overhead?"));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(find.byType(SnackBar), findsNothing);
+    });
+  });
+
+  group('Logbook pagination', () {
+    testWidgets('caps rows at a page and reveals more on demand',
+        (tester) async {
+      final store = InMemorySightingStore<Sighting>();
+      for (var i = 0; i < 60; i++) {
+        await store.add(_sighting(icao24: 'ac$i'));
+      }
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            sightingStoreProvider.overrideWithValue(store),
+          ],
+          child: const MaterialApp(home: LogbookScreen()),
+        ),
+      );
+
+      // The footer sits below the first page of rows; scroll to reach it.
+      await tester.scrollUntilVisible(
+        find.textContaining('Show more'),
+        400,
+      );
+      expect(find.textContaining('Show more'), findsOneWidget);
+
+      await tester.tap(find.textContaining('Show more'));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('Show more'), findsNothing);
     });
   });
 }

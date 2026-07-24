@@ -39,6 +39,26 @@ Prebuilt Android APKs are published on the repository's
 5. Present the result — or a friendly "Clear skies" message when nothing
    qualifies.
 
+## Collect & Medals
+
+By default Sky Overhead simply identifies what's overhead and remembers nothing.
+Turn on **Collector mode** in Settings to opt in to a lightweight collector loop:
+
+- **Logbook** — every successful identification is saved as a *sighting* you can
+  browse and revisit.
+- **Collections** — unique destinations, origins, airlines, aircraft types,
+  manufacturers, registrations and countries you've spotted.
+- **Medals** — a tiered ace ladder (Cadet → Air Marshal) plus themed
+  achievements like *High Roller*, *Speed Demon*, *Right Overhead* and *Globe
+  Trotter*.
+- **Stats** — personal-best records (highest, fastest, farthest, closest),
+  top-5 lists, an activity chart, and a compass rose of where you look.
+
+Unlocking something shows an instant toast on the Sky tab. Collector mode is
+fully opt-in: pausing stops new logging without touching your data, and turning
+it off deletes the stored sightings, returning the app to its identify-only
+default.
+
 ### Observer location
 
 On startup the app seeds the observer position with a **hard-coded default of

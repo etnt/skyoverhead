@@ -1,6 +1,8 @@
 /// The Logbook tab: a reverse-chronological list of saved [Sighting]s, with an
-/// empty state when nothing has been collected yet. Tapping a row opens the
-/// [SightingDetailScreen].
+/// empty state when nothing has been collected yet. The list renders in pages
+/// of [kLogbookPageSize] with a "Show more" footer so a large history stays
+/// cheap to render (the underlying data is always complete). Tapping a row
+/// opens the [SightingDetailScreen].
 library;
 
 import 'package:flutter/material.dart';
@@ -11,12 +13,24 @@ import '../state/sighting_logger.dart';
 import 'format.dart' as fmt;
 import 'sighting_detail_screen.dart';
 
-class LogbookScreen extends ConsumerWidget {
+/// How many logbook rows are revealed per page.
+const int kLogbookPageSize = 50;
+
+class LogbookScreen extends ConsumerStatefulWidget {
   const LogbookScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<LogbookScreen> createState() => _LogbookScreenState();
+}
+
+class _LogbookScreenState extends ConsumerState<LogbookScreen> {
+  int _visible = kLogbookPageSize;
+
+  @override
+  Widget build(BuildContext context) {
     final sightings = ref.watch(sightingsProvider);
+    final shown = sightings.length < _visible ? sightings.length : _visible;
+    final hasMore = sightings.length > shown;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Logbook')),
@@ -24,11 +38,40 @@ class LogbookScreen extends ConsumerWidget {
         child: sightings.isEmpty
             ? const _EmptyLogbook()
             : ListView.separated(
-                itemCount: sightings.length,
+                itemCount: shown + (hasMore ? 1 : 0),
                 separatorBuilder: (_, _) => const Divider(height: 1),
-                itemBuilder: (context, index) =>
-                    _SightingRow(sighting: sightings[index]),
+                itemBuilder: (context, index) {
+                  if (index >= shown) {
+                    return _ShowMoreTile(
+                      remaining: sightings.length - shown,
+                      onPressed: () => setState(
+                        () => _visible += kLogbookPageSize,
+                      ),
+                    );
+                  }
+                  return _SightingRow(sighting: sightings[index]);
+                },
               ),
+      ),
+    );
+  }
+}
+
+class _ShowMoreTile extends StatelessWidget {
+  final int remaining;
+  final VoidCallback onPressed;
+  const _ShowMoreTile({required this.remaining, required this.onPressed});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      child: Center(
+        child: TextButton.icon(
+          onPressed: onPressed,
+          icon: const Icon(Icons.expand_more),
+          label: Text('Show more ($remaining)'),
+        ),
       ),
     );
   }
@@ -80,6 +123,7 @@ class _Thumbnail extends StatelessWidget {
         width: 40,
         height: 40,
         fit: BoxFit.cover,
+        semanticLabel: 'Aircraft photo',
         errorBuilder: (_, _, _) => fallback,
       ),
     );

@@ -54,7 +54,10 @@ class StatsScreen extends ConsumerWidget {
                         const SizedBox(height: 12),
                         SizedBox(
                           height: 96,
-                          child: _BarChart(perDay: stats.perDay),
+                          child: Semantics(
+                            label: 'Sightings per day over the last two weeks',
+                            child: _BarChart(perDay: stats.perDay),
+                          ),
                         ),
                       ],
                     ),
@@ -63,17 +66,22 @@ class StatsScreen extends ConsumerWidget {
                   _StatCard(
                     title: 'Bearings',
                     child: Center(
-                      child: SizedBox(
-                        width: 180,
-                        height: 180,
-                        child: CustomPaint(
-                          painter: _CompassRosePainter(
-                            bins: stats.bearingBins,
-                            color: Theme.of(context).colorScheme.primary,
-                            gridColor:
-                                Theme.of(context).colorScheme.outlineVariant,
-                            labelColor:
-                                Theme.of(context).colorScheme.onSurfaceVariant,
+                      child: Semantics(
+                        label: 'Compass rose showing the directions aircraft '
+                            'were seen from',
+                        child: SizedBox(
+                          width: 180,
+                          height: 180,
+                          child: CustomPaint(
+                            painter: _CompassRosePainter(
+                              bins: stats.bearingBins,
+                              color: Theme.of(context).colorScheme.primary,
+                              gridColor:
+                                  Theme.of(context).colorScheme.outlineVariant,
+                              labelColor: Theme.of(context)
+                                  .colorScheme
+                                  .onSurfaceVariant,
+                            ),
                           ),
                         ),
                       ),
