@@ -1,8 +1,8 @@
 /// The app's root shell. When Collector mode is **off** the app is exactly the
 /// single [HomeScreen] it has always been. When Collector mode is **on**, a
 /// bottom [NavigationBar] appears with a `Sky` tab (the identifier), a
-/// `Logbook` tab (saved sightings) and a `Medals` tab (collections &
-/// achievements). More collector tabs (Stats) are added in later phases.
+/// `Logbook` tab (saved sightings), a `Medals` tab (collections &
+/// achievements) and a `Stats` tab (records & trends).
 library;
 
 import 'package:flutter/material.dart';
@@ -12,6 +12,7 @@ import '../state/collector_provider.dart';
 import 'home_screen.dart';
 import 'logbook_screen.dart';
 import 'medals_screen.dart';
+import 'stats_screen.dart';
 
 class AppShell extends ConsumerStatefulWidget {
   const AppShell({super.key});
@@ -33,12 +34,17 @@ class _AppShellState extends ConsumerState<AppShell> {
     }
 
     // Guard against a stale index if the tab set shrinks.
-    final index = _index.clamp(0, 2);
+    final index = _index.clamp(0, 3);
 
     return Scaffold(
       body: IndexedStack(
         index: index,
-        children: const [HomeScreen(), LogbookScreen(), MedalsScreen()],
+        children: const [
+          HomeScreen(),
+          LogbookScreen(),
+          MedalsScreen(),
+          StatsScreen(),
+        ],
       ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: index,
@@ -55,6 +61,10 @@ class _AppShellState extends ConsumerState<AppShell> {
           NavigationDestination(
             icon: Icon(Icons.military_tech),
             label: 'Medals',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.query_stats),
+            label: 'Stats',
           ),
         ],
       ),

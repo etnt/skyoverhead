@@ -301,4 +301,38 @@ void main() {
       expect(find.textContaining('/ 5'), findsWidgets);
     });
   });
+
+  group('Stats tab', () {
+    testWidgets('appears when Collector mode is on', (tester) async {
+      await _pumpApp(tester, enabled: true);
+      expect(find.text('Stats'), findsOneWidget);
+    });
+
+    testWidgets('shows records and totals for seeded sightings',
+        (tester) async {
+      await _pumpApp(
+        tester,
+        enabled: true,
+        seed: [
+          _sighting(destination: const Airport(icao: 'ESSA', iata: 'ARN')),
+        ],
+      );
+
+      await tester.tap(find.text('Stats'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Records'), findsOneWidget);
+      expect(find.text('Highest altitude'), findsOneWidget);
+      expect(find.text('Closest'), findsOneWidget);
+    });
+
+    testWidgets('shows the empty state with no sightings', (tester) async {
+      await _pumpApp(tester, enabled: true);
+
+      await tester.tap(find.text('Stats'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('No stats yet'), findsOneWidget);
+    });
+  });
 }

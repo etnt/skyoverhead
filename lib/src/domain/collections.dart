@@ -90,7 +90,7 @@ Set<String> _codes(
 ) {
   final result = <String>{};
   for (final s in sightings) {
-    final code = _airportCode(pick(s));
+    final code = airportCode(pick(s));
     if (code != null) result.add(code);
   }
   return result;
@@ -110,7 +110,9 @@ Set<String> _strings(
   return result;
 }
 
-String? _airportCode(Airport? airport) {
+/// The preferred display code for an [airport]: IATA if present, else ICAO,
+/// upper-cased and trimmed; `null` when neither is known.
+String? airportCode(Airport? airport) {
   if (airport == null) return null;
   final iata = airport.iata?.trim();
   if (iata != null && iata.isNotEmpty) return iata.toUpperCase();
