@@ -62,6 +62,22 @@ dev_dependencies:
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
 
+  # Generates the Android/iOS launcher icons from a single source image.
+  # Run `dart run flutter_launcher_icons` after changing assets/icon/*.
+  flutter_launcher_icons: ^0.14.1
+
+# Launcher icon generation. Source art lives in assets/icon/.
+#   * app_icon.png            – full-bleed icon (iOS + legacy Android).
+#   * app_icon_foreground.png – transparent aircraft for Android adaptive icons,
+#                               drawn over the indigo adaptive background below.
+flutter_launcher_icons:
+  android: true
+  ios: true
+  remove_alpha_ios: true
+  image_path: "assets/icon/app_icon.png"
+  adaptive_icon_background: "#3B4AC0"
+  adaptive_icon_foreground: "assets/icon/app_icon_foreground.png"
+
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 
