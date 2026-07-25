@@ -157,4 +157,42 @@ void main() {
       expect(counts[CollectionKind.destinations], 1);
     });
   });
+
+  group('aceStanding', () {
+    test('no destinations is unranked with Cadet as the next goal', () {
+      final s = aceStanding(const []);
+      expect(s.hasRank, isFalse);
+      expect(s.current, isNull);
+      expect(s.level, 0);
+      expect(s.next?.id, 'ace.cadet');
+      expect(s.toNext, 1);
+      expect(s.progressToNext, 0.0);
+    });
+
+    test('mid-ladder reports current, next and fractional progress', () {
+      // 7 destinations: Pilot Officer (5) earned, Flying Officer (10) next.
+      final s = aceStanding(_withDestinations(7));
+      expect(s.current?.id, 'ace.pilotOfficer');
+      expect(s.level, 2);
+      expect(s.next?.id, 'ace.flyingOfficer');
+      expect(s.toNext, 3);
+      // (7 - 5) / (10 - 5) = 0.4
+      expect(s.progressToNext, closeTo(0.4, 1e-9));
+    });
+
+    test('exactly on a threshold earns that rank', () {
+      final s = aceStanding(_withDestinations(10));
+      expect(s.current?.id, 'ace.flyingOfficer');
+      expect(s.next?.id, 'ace.squadronLeader');
+    });
+
+    test('top rank saturates with no next tier', () {
+      final s = aceStanding(_withDestinations(200));
+      expect(s.current?.id, 'ace.airMarshal');
+      expect(s.level, kAceTiers.length);
+      expect(s.next, isNull);
+      expect(s.toNext, 0);
+      expect(s.progressToNext, 1.0);
+    });
+  });
 }

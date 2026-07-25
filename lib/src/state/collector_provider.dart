@@ -21,6 +21,11 @@ final collectorPreferencesProvider = Provider<CollectorPreferences>((ref) {
   return InMemoryCollectorPreferences();
 });
 
+/// The selected bottom-navigation tab index in the collector app shell. Exposed
+/// as shared state so screens (e.g. the Sky tab's rank badge) can navigate to
+/// another tab. `0` = Sky, `1` = Logbook, `2` = Medals, `3` = Stats.
+final selectedTabProvider = StateProvider<int>((ref) => 0);
+
 /// Master collector switch. Default `false` (identify-only).
 final collectorEnabledProvider =
     StateNotifierProvider<CollectorFlagNotifier, bool>((ref) {

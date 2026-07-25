@@ -24,12 +24,16 @@ import '../state/sighting_logger.dart';
 /// minimum elevation back into [identifyConfigProvider].
 Future<void> showSettingsDialog(BuildContext context, WidgetRef ref) async {
   final current = ref.read(identifyConfigProvider);
+  // Capture the notifier before awaiting: the calling widget may be disposed
+  // while the dialog is open, which would make `ref` unusable afterwards. The
+  // provider's notifier outlives the widget, so it stays safe to use.
+  final configNotifier = ref.read(identifyConfigProvider.notifier);
   final result = await showDialog<IdentifyConfig>(
     context: context,
     builder: (_) => _SettingsDialog(current: current),
   );
   if (result != null) {
-    ref.read(identifyConfigProvider.notifier).state = result;
+    configNotifier.state = result;
   }
 }
 

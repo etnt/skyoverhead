@@ -70,6 +70,69 @@ const List<AceTier> kAceTiers = [
   AceTier(id: 'ace.airMarshal', name: 'Air Marshal', threshold: 100),
 ];
 
+/// A snapshot of where the collector currently stands on the ace ladder: the
+/// highest rank earned, the next rank to aim for, and how far along they are.
+///
+/// This drives the rank badge on the Sky tab. Before the first destination is
+/// collected [current] is `null` (pre-Cadet); at the top rank [next] is `null`.
+class AceStanding {
+  /// Highest earned tier, or `null` before the first rank (Cadet) is reached.
+  final AceTier? current;
+
+  /// The next tier to earn, or `null` when already at the top rank.
+  final AceTier? next;
+
+  /// Unique destinations collected — the metric the ladder is keyed on.
+  final int destinations;
+
+  const AceStanding({
+    required this.current,
+    required this.next,
+    required this.destinations,
+  });
+
+  /// 1-based rank level (`0` before Cadet, `kAceTiers.length` at the top).
+  int get level => current == null ? 0 : kAceTiers.indexOf(current!) + 1;
+
+  /// The total number of ranks on the ladder.
+  int get maxLevel => kAceTiers.length;
+
+  /// Whether any rank has been earned yet.
+  bool get hasRank => current != null;
+
+  /// Progress from the current rank toward [next], in `[0, 1]`. Saturates at
+  /// `1.0` when already at the top rank.
+  double get progressToNext {
+    if (next == null) return 1.0;
+    final base = current?.threshold ?? 0;
+    final span = next!.threshold - base;
+    if (span <= 0) return 1.0;
+    return ((destinations - base) / span).clamp(0.0, 1.0);
+  }
+
+  /// Destinations still needed to reach [next]; `0` at the top rank.
+  int get toNext {
+    if (next == null) return 0;
+    return (next!.threshold - destinations).clamp(0, next!.threshold);
+  }
+}
+
+/// Determine the collector's current [AceStanding] from their [sightings].
+AceStanding aceStanding(List<Sighting> sightings) {
+  final destinations = uniqueDestinations(sightings).length;
+  AceTier? current;
+  AceTier? next;
+  for (final tier in kAceTiers) {
+    if (destinations >= tier.threshold) {
+      current = tier;
+    } else {
+      next = tier;
+      break;
+    }
+  }
+  return AceStanding(current: current, next: next, destinations: destinations);
+}
+
 // Themed achievement thresholds (tunable).
 const double kHighRollerAltitudeM = 12000; // ~39,000 ft cruise
 const double kSpeedDemonSpeedMps = 280; // ~1,008 km/h

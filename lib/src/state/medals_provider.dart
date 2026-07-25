@@ -15,6 +15,13 @@ final medalsProvider = Provider<List<Medal>>((ref) {
   return computeMedals(sightings);
 });
 
+/// The collector's current rank standing on the ace ladder (current/next tier
+/// and progress), used by the rank badge on the Sky tab.
+final aceStandingProvider = Provider<AceStanding>((ref) {
+  final sightings = ref.watch(sightingsProvider);
+  return aceStanding(sightings);
+});
+
 /// Unique-key counts per collection kind.
 final collectionCountsProvider = Provider<Map<CollectionKind, int>>((ref) {
   final sightings = ref.watch(sightingsProvider);

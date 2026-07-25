@@ -22,8 +22,6 @@ class AppShell extends ConsumerStatefulWidget {
 }
 
 class _AppShellState extends ConsumerState<AppShell> {
-  int _index = 0;
-
   @override
   Widget build(BuildContext context) {
     final collectorEnabled = ref.watch(collectorEnabledProvider);
@@ -34,7 +32,7 @@ class _AppShellState extends ConsumerState<AppShell> {
     }
 
     // Guard against a stale index if the tab set shrinks.
-    final index = _index.clamp(0, 3);
+    final index = ref.watch(selectedTabProvider).clamp(0, 3);
 
     return Scaffold(
       body: IndexedStack(
@@ -48,7 +46,8 @@ class _AppShellState extends ConsumerState<AppShell> {
       ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: index,
-        onDestinationSelected: (i) => setState(() => _index = i),
+        onDestinationSelected: (i) =>
+            ref.read(selectedTabProvider.notifier).state = i,
         destinations: const [
           NavigationDestination(
             icon: Icon(Icons.travel_explore),
