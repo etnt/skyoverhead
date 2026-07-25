@@ -155,5 +155,24 @@ void main() {
 
       expect(store.all, hasLength(2));
     });
+
+    test('dedup survives a fresh logger over the same store (restart)',
+        () async {
+      final store = FakeSightingStore<Sighting>();
+      var clock = DateTime(2024, 1, 1, 12, 0, 0);
+
+      // First logger logs the aircraft, then is discarded (simulating the app
+      // being closed or the provider being recreated).
+      await _logger(store, enabled: true, paused: false, now: () => clock)
+          .logResult(_okResult());
+
+      // A brand-new logger with an empty in-memory state still sees the
+      // persisted sighting and skips the duplicate within the window.
+      clock = clock.add(const Duration(seconds: 30));
+      await _logger(store, enabled: true, paused: false, now: () => clock)
+          .logResult(_okResult());
+
+      expect(store.all, hasLength(1));
+    });
   });
 }

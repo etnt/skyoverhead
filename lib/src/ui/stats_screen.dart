@@ -11,6 +11,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../domain/models.dart';
 import '../domain/records.dart';
 import '../domain/statistics.dart';
+import '../state/collector_provider.dart';
 import '../state/statistics_provider.dart';
 import 'format.dart' as fmt;
 
@@ -21,9 +22,24 @@ class StatsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final stats = ref.watch(statisticsProvider);
     final records = ref.watch(recordsProvider);
+    final excluded = ref.watch(excludedAirportsProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Stats')),
+      appBar: AppBar(
+        title: const Text('Stats'),
+        actions: [
+          IconButton(
+            tooltip: 'Hidden airports',
+            onPressed: () => _openFilters(context),
+            icon: excluded.isEmpty
+                ? const Icon(Icons.filter_alt_outlined)
+                : Badge(
+                    label: Text('${excluded.length}'),
+                    child: const Icon(Icons.filter_alt),
+                  ),
+          ),
+        ],
+      ),
       body: SafeArea(
         child: stats.total == 0
             ? const _EmptyStats()
@@ -32,7 +48,19 @@ class StatsScreen extends ConsumerWidget {
                 children: [
                   _RecordsBoard(records: records),
                   const SizedBox(height: 24),
-                  _TopList(title: 'Top destinations', tallies: stats.topDestinations),
+                  _TopList(
+                    title: 'Top destinations',
+                    tallies: stats.topDestinations,
+                    names: stats.airportNames,
+                    onHide: (code) => _confirmHide(context, ref, code),
+                  ),
+                  const SizedBox(height: 16),
+                  _TopList(
+                    title: 'Top origins',
+                    tallies: stats.topOrigins,
+                    names: stats.airportNames,
+                    onHide: (code) => _confirmHide(context, ref, code),
+                  ),
                   const SizedBox(height: 16),
                   _TopList(title: 'Top airlines', tallies: stats.topAirlines),
                   const SizedBox(height: 16),
@@ -51,6 +79,10 @@ class StatsScreen extends ConsumerWidget {
                           _summaryRow('Rarest destination',
                               '${stats.rarestDestination!.key} '
                               '(${stats.rarestDestination!.count})'),
+                        if (stats.rarestOrigin != null)
+                          _summaryRow('Rarest origin',
+                              '${stats.rarestOrigin!.key} '
+                              '(${stats.rarestOrigin!.count})'),
                         const SizedBox(height: 12),
                         SizedBox(
                           height: 96,
@@ -103,6 +135,94 @@ class StatsScreen extends ConsumerWidget {
           ],
         ),
       );
+
+  Future<void> _confirmHide(
+      BuildContext context, WidgetRef ref, String code) async {
+    final hide = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('Hide $code from stats?'),
+        content: const Text(
+          'This airport is removed from the Top destinations and Top origins '
+          'lists. Your logged sightings are not affected — restore it any time '
+          'from the filter menu.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Hide'),
+          ),
+        ],
+      ),
+    );
+    if ((hide ?? false) && context.mounted) {
+      await ref.read(excludedAirportsProvider.notifier).add(code);
+    }
+  }
+
+  void _openFilters(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (_) => const _HiddenAirportsSheet(),
+    );
+  }
+}
+
+/// A bottom sheet listing the airports currently hidden from the stats top
+/// lists, each restorable with a tap.
+class _HiddenAirportsSheet extends ConsumerWidget {
+  const _HiddenAirportsSheet();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final excluded = ref.watch(excludedAirportsProvider);
+    final theme = Theme.of(context);
+    final codes = excluded.toList()..sort();
+
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Hidden airports', style: theme.textTheme.titleMedium),
+            const SizedBox(height: 8),
+            if (codes.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                child: Text(
+                  'No hidden airports. Long-press an airport in the Top '
+                  'destinations or Top origins list to hide it — handy for a '
+                  'home airport that would otherwise dominate.',
+                  style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
+                ),
+              )
+            else
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  for (final code in codes)
+                    InputChip(
+                      label: Text(code),
+                      onDeleted: () =>
+                          ref.read(excludedAirportsProvider.notifier).remove(code),
+                      deleteIcon: const Icon(Icons.close, size: 18),
+                      deleteButtonTooltipMessage: 'Restore $code',
+                    ),
+                ],
+              ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 String _recordValue(RecordEntry entry) {
@@ -153,30 +273,60 @@ class _RecordsBoard extends StatelessWidget {
 class _TopList extends StatelessWidget {
   final String title;
   final List<Tally> tallies;
-  const _TopList({required this.title, required this.tallies});
+
+  /// Optional code → full-name map; when a code resolves, its name is shown as
+  /// a secondary line under the code.
+  final Map<String, String>? names;
+
+  /// When set, each row can be long-pressed to hide that airport from stats.
+  final void Function(String code)? onHide;
+
+  const _TopList({
+    required this.title,
+    required this.tallies,
+    this.names,
+    this.onHide,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return _StatCard(
       title: title,
       child: tallies.isEmpty
           ? Text(
               'No data yet',
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
+              style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
             )
           : Column(
               children: [
                 for (final t in tallies)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 2),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(child: Text(t.key)),
-                        Text('${t.count}'),
-                      ],
+                  InkWell(
+                    onLongPress:
+                        onHide == null ? null : () => onHide!(t.key),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 6),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(t.key),
+                                if (names?[t.key] case final name?)
+                                  Text(
+                                    name,
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                      color: theme.colorScheme.onSurfaceVariant,
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                          Text('${t.count}'),
+                        ],
+                      ),
                     ),
                   ),
               ],

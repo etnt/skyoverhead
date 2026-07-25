@@ -49,10 +49,66 @@ class _LogbookScreenState extends ConsumerState<LogbookScreen> {
                       ),
                     );
                   }
-                  return _SightingRow(sighting: sightings[index]);
+                  final sighting = sightings[index];
+                  return Dismissible(
+                    key: ObjectKey(sighting),
+                    direction: DismissDirection.endToStart,
+                    background: const _DeleteBackground(),
+                    confirmDismiss: (_) => _confirmDelete(context, sighting),
+                    onDismissed: (_) => _deleteSighting(context, sighting),
+                    child: _SightingRow(sighting: sighting),
+                  );
                 },
               ),
       ),
+    );
+  }
+
+  /// Ask the user to confirm removing [sighting] from the logbook.
+  Future<bool> _confirmDelete(BuildContext context, Sighting sighting) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete sighting?'),
+        content: const Text(
+          'This removes the observation and its stored data. This cannot be '
+          'undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    return confirmed ?? false;
+  }
+
+  void _deleteSighting(BuildContext context, Sighting sighting) {
+    ref.read(sightingStoreProvider).remove(sighting);
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(const SnackBar(content: Text('Sighting deleted')));
+  }
+}
+
+class _DeleteBackground extends StatelessWidget {
+  const _DeleteBackground();
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      color: scheme.errorContainer,
+      alignment: Alignment.centerRight,
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Icon(Icons.delete_outline, color: scheme.onErrorContainer),
     );
   }
 }

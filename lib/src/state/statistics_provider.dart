@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../domain/records.dart';
 import '../domain/statistics.dart';
+import 'collector_provider.dart';
 import 'sighting_logger.dart';
 
 /// Personal-best records, keyed by [RecordKind] (absent kinds have no data).
@@ -18,5 +19,6 @@ final recordsProvider = Provider<Map<RecordKind, RecordEntry>>((ref) {
 /// Aggregate statistics snapshot.
 final statisticsProvider = Provider<Statistics>((ref) {
   final sightings = ref.watch(sightingsProvider);
-  return computeStatistics(sightings);
+  final excluded = ref.watch(excludedAirportsProvider);
+  return computeStatistics(sightings, excluded: excluded);
 });

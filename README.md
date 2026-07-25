@@ -45,14 +45,19 @@ By default Sky Overhead simply identifies what's overhead and remembers nothing.
 Turn on **Collector mode** in Settings to opt in to a lightweight collector loop:
 
 - **Logbook** — every successful identification is saved as a *sighting* you can
-  browse and revisit.
+  browse and revisit. Repeat identifications of the same aircraft within a short
+  window are treated as duplicates and skipped, and you can delete any entry
+  (swipe a row or use the delete action on its detail screen) to remove an
+  accidental sighting and its stored data.
 - **Collections** — unique destinations, origins, airlines, aircraft types,
   manufacturers, registrations and countries you've spotted.
 - **Medals** — a tiered ace ladder (Cadet → Air Marshal) plus themed
   achievements like *High Roller*, *Speed Demon*, *Right Overhead* and *Globe
   Trotter*.
 - **Stats** — personal-best records (highest, fastest, farthest, closest),
-  top-5 lists, an activity chart, and a compass rose of where you look.
+  top-5 destinations and origins (each showing the airport code and full name),
+  an activity chart, and a compass rose of where you look. A filter lets you
+  hide dominant airports (e.g. your nearby home airport) from the top lists.
 
 Unlocking something shows an instant toast on the Sky tab. Collector mode is
 fully opt-in: pausing stops new logging without touching your data, and turning

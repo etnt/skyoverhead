@@ -41,6 +41,54 @@ final collectorPausedProvider =
   );
 });
 
+/// Airport codes hidden from the Stats top lists (persisted). Empty by default.
+final excludedAirportsProvider =
+    StateNotifierProvider<ExcludedAirportsNotifier, Set<String>>((ref) {
+  final prefs = ref.watch(collectorPreferencesProvider);
+  return ExcludedAirportsNotifier(
+    initial: prefs.excludedAirports,
+    persist: prefs.setExcludedAirports,
+  );
+});
+
+/// A persisted set of excluded airport codes, normalised to upper-case.
+class ExcludedAirportsNotifier extends StateNotifier<Set<String>> {
+  final Future<void> Function(Set<String>) persist;
+
+  ExcludedAirportsNotifier({
+    required Set<String> initial,
+    required this.persist,
+  }) : super(Set.unmodifiable({
+          for (final c in initial)
+            if (_norm(c).isNotEmpty) _norm(c),
+        }));
+
+  static String _norm(String code) => code.trim().toUpperCase();
+
+  /// Hide [code] from the stats top lists (no-op if already hidden or blank).
+  Future<void> add(String code) async {
+    final n = _norm(code);
+    if (n.isEmpty || state.contains(n)) return;
+    state = Set.unmodifiable({...state, n});
+    await persist(state);
+  }
+
+  /// Restore [code] to the stats top lists (no-op if not currently hidden).
+  Future<void> remove(String code) async {
+    final n = _norm(code);
+    if (!state.contains(n)) return;
+    state = Set.unmodifiable(state.where((c) => c != n).toSet());
+    await persist(state);
+  }
+
+  /// Whether [code] is currently hidden.
+  bool contains(String code) => state.contains(_norm(code));
+
+  /// Hide [code] if visible, or restore it if hidden.
+  Future<void> toggle(String code) =>
+      contains(code) ? remove(code) : add(code);
+}
+
 /// A boolean flag whose changes are written back to persistent storage.
 class CollectorFlagNotifier extends StateNotifier<bool> {
   final Future<void> Function(bool) persist;

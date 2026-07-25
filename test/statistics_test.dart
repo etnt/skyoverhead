@@ -9,6 +9,7 @@ Sighting _s({
   String? airline,
   String? registeredOwnerOperator,
   Airport? destination,
+  Airport? origin,
   double bearingDeg = 0,
   Confidence confidence = Confidence.high,
   DateTime? capturedAt,
@@ -20,6 +21,7 @@ Sighting _s({
     airline: airline,
     registeredOwnerOperator: registeredOwnerOperator,
     destination: destination,
+    origin: origin,
     altitudeM: 10000,
     distanceKm: 10,
     bearingDeg: bearingDeg,
@@ -28,7 +30,7 @@ Sighting _s({
   );
 }
 
-Airport _dest(String iata) => Airport(iata: iata);
+Airport _dest(String iata, {String? name}) => Airport(iata: iata, name: name);
 
 void main() {
   test('empty input returns the empty snapshot', () {
@@ -139,5 +141,62 @@ void main() {
     expect(s.topDestinations, isEmpty);
     expect(s.topTypes, isEmpty);
     expect(s.rarestDestination, isNull);
+  });
+
+  test('origins are tallied independently of destinations', () {
+    final s = computeStatistics([
+      _s(origin: _dest('LHR'), destination: _dest('ARN')),
+      _s(origin: _dest('LHR'), destination: _dest('ARN')),
+      _s(origin: _dest('CDG'), destination: _dest('ARN')),
+    ]);
+    expect(s.topOrigins.first, const Tally('LHR', 2));
+    expect(s.topOrigins[1], const Tally('CDG', 1));
+    expect(s.rarestOrigin, const Tally('CDG', 1));
+    // Destinations are unaffected.
+    expect(s.topDestinations.first, const Tally('ARN', 3));
+  });
+
+  test('excluded airports drop from both origin and destination tallies', () {
+    final s = computeStatistics(
+      [
+        _s(origin: _dest('ARN'), destination: _dest('LHR')),
+        _s(origin: _dest('CDG'), destination: _dest('ARN')),
+        _s(origin: _dest('CDG'), destination: _dest('FRA')),
+      ],
+      excluded: {'ARN'},
+    );
+    // ARN removed as both an origin and a destination.
+    expect(s.topOrigins.map((t) => t.key), isNot(contains('ARN')));
+    expect(s.topDestinations.map((t) => t.key), isNot(contains('ARN')));
+    expect(s.topOrigins.first, const Tally('CDG', 2));
+    expect(s.topDestinations.map((t) => t.key),
+        containsAll(<String>['LHR', 'FRA']));
+    // The excluded sightings still count toward the total.
+    expect(s.total, 3);
+  });
+
+  test('exclusion matching is case-insensitive', () {
+    final s = computeStatistics(
+      [_s(destination: _dest('ARN')), _s(destination: _dest('FRA'))],
+      excluded: {'arn'},
+    );
+    expect(s.topDestinations.map((t) => t.key), isNot(contains('ARN')));
+    expect(s.topDestinations.first, const Tally('FRA', 1));
+  });
+
+  test('airport names are captured for origins and destinations', () {
+    final s = computeStatistics([
+      _s(
+        origin: _dest('LHR', name: 'London Heathrow'),
+        destination: _dest('ARN', name: 'Stockholm Arlanda'),
+      ),
+      // A later sighting with no name must not clobber the known one.
+      _s(destination: _dest('ARN')),
+    ]);
+    expect(s.airportNames['ARN'], 'Stockholm Arlanda');
+    expect(s.airportNames['LHR'], 'London Heathrow');
+    // Codes without any known name are simply absent.
+    final noName = computeStatistics([_s(destination: _dest('BER'))]);
+    expect(noName.airportNames.containsKey('BER'), isFalse);
   });
 }

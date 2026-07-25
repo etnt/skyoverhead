@@ -11,8 +11,13 @@ typedef FakeSightingStore<T> = InMemorySightingStore<T>;
 class FakeCollectorPreferences implements CollectorPreferences {
   bool enabled;
   bool paused;
+  Set<String> excluded;
 
-  FakeCollectorPreferences({this.enabled = false, this.paused = false});
+  FakeCollectorPreferences({
+    this.enabled = false,
+    this.paused = false,
+    Set<String>? excluded,
+  }) : excluded = excluded ?? <String>{};
 
   @override
   bool get collectorEnabled => enabled;
@@ -21,8 +26,14 @@ class FakeCollectorPreferences implements CollectorPreferences {
   bool get collectorPaused => paused;
 
   @override
+  Set<String> get excludedAirports => excluded;
+
+  @override
   Future<void> setCollectorEnabled(bool value) async => enabled = value;
 
   @override
   Future<void> setCollectorPaused(bool value) async => paused = value;
+
+  @override
+  Future<void> setExcludedAirports(Set<String> value) async => excluded = value;
 }

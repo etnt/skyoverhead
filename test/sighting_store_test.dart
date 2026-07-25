@@ -73,6 +73,41 @@ void main() {
       expect(reloaded.all, isEmpty);
     });
 
+    test('remove deletes one item and persists the result', () async {
+      SharedPreferences.setMockInitialValues({});
+      final prefs = await SharedPreferences.getInstance();
+      final store = _store(prefs);
+      final a = const _Item('a', 1);
+      final b = const _Item('b', 2);
+      await store.add(a);
+      await store.add(b);
+
+      var notifications = 0;
+      store.addListener(() => notifications++);
+
+      await store.remove(a);
+      expect(store.all.map((i) => i.id), ['b']);
+      expect(notifications, 1);
+
+      // Removal survives a restart.
+      final reloaded = _store(prefs);
+      expect(reloaded.all.map((i) => i.id), ['b']);
+    });
+
+    test('remove is a no-op for an absent item', () async {
+      SharedPreferences.setMockInitialValues({});
+      final prefs = await SharedPreferences.getInstance();
+      final store = _store(prefs);
+      await store.add(const _Item('a', 1));
+
+      var notifications = 0;
+      store.addListener(() => notifications++);
+
+      await store.remove(const _Item('z', 9));
+      expect(store.all.map((i) => i.id), ['a']);
+      expect(notifications, 0);
+    });
+
     test('tolerates a corrupt stored blob by starting empty', () async {
       SharedPreferences.setMockInitialValues({
         SharedPrefsSightingStore.defaultKey: 'not valid json',

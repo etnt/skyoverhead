@@ -34,12 +34,17 @@ const int kBearingBins = 8;
 class Statistics {
   final int total;
   final List<Tally> topDestinations;
+  final List<Tally> topOrigins;
   final List<Tally> topAirlines;
   final List<Tally> topTypes;
 
   /// The least-frequently seen destination (ties broken alphabetically), or
   /// `null` when no destinations are known.
   final Tally? rarestDestination;
+
+  /// The least-frequently seen origin (ties broken alphabetically), or `null`
+  /// when no origins are known.
+  final Tally? rarestOrigin;
 
   /// Count of sightings per calendar day (local midnight → count).
   final Map<DateTime, int> perDay;
@@ -54,47 +59,81 @@ class Statistics {
   /// advancing clockwise (NE, E, …).
   final List<int> bearingBins;
 
+  /// Best-known full name for each airport code seen as an origin or
+  /// destination (code → name). Codes without a known name are absent.
+  final Map<String, String> airportNames;
+
   const Statistics({
     required this.total,
     required this.topDestinations,
+    required this.topOrigins,
     required this.topAirlines,
     required this.topTypes,
     required this.rarestDestination,
+    required this.rarestOrigin,
     required this.perDay,
     required this.longestDayStreak,
     required this.confidenceMix,
     required this.bearingBins,
+    required this.airportNames,
   });
 
   /// An empty snapshot for when nothing has been collected.
   factory Statistics.empty() => Statistics(
         total: 0,
         topDestinations: const [],
+        topOrigins: const [],
         topAirlines: const [],
         topTypes: const [],
         rarestDestination: null,
+        rarestOrigin: null,
         perDay: const {},
         longestDayStreak: 0,
         confidenceMix: const {},
         bearingBins: List<int>.filled(kBearingBins, 0),
+        airportNames: const {},
       );
 }
 
 /// Compute aggregate [Statistics] over [sightings].
-Statistics computeStatistics(List<Sighting> sightings, {int topN = 5}) {
+///
+/// [excluded] airport codes (IATA/ICAO, matched case-insensitively) are dropped
+/// from both the origin and destination tallies — useful for hiding a home
+/// airport that would otherwise dominate the lists. Excluded airports still
+/// count toward the total and every other statistic.
+Statistics computeStatistics(
+  List<Sighting> sightings, {
+  int topN = 5,
+  Set<String> excluded = const {},
+}) {
   if (sightings.isEmpty) return Statistics.empty();
 
+  final excludedCodes = {
+    for (final c in excluded)
+      if (c.trim().isNotEmpty) c.trim().toUpperCase(),
+  };
+
   final destinationCounts = <String, int>{};
+  final originCounts = <String, int>{};
   final airlineCounts = <String, int>{};
   final typeCounts = <String, int>{};
   final perDay = <DateTime, int>{};
   final confidenceMix = <Confidence, int>{};
   final bearingBins = List<int>.filled(kBearingBins, 0);
+  final airportNames = <String, String>{};
 
   for (final s in sightings) {
+    _recordName(airportNames, s.destination);
+    _recordName(airportNames, s.origin);
+
     final dest = airportCode(s.destination);
-    if (dest != null) {
+    if (dest != null && !excludedCodes.contains(dest)) {
       destinationCounts[dest] = (destinationCounts[dest] ?? 0) + 1;
+    }
+
+    final origin = airportCode(s.origin);
+    if (origin != null && !excludedCodes.contains(origin)) {
+      originCounts[origin] = (originCounts[origin] ?? 0) + 1;
     }
 
     final airline = (s.airline ?? s.registeredOwnerOperator)?.trim();
@@ -118,13 +157,16 @@ Statistics computeStatistics(List<Sighting> sightings, {int topN = 5}) {
   return Statistics(
     total: sightings.length,
     topDestinations: _topN(destinationCounts, topN),
+    topOrigins: _topN(originCounts, topN),
     topAirlines: _topN(airlineCounts, topN),
     topTypes: _topN(typeCounts, topN),
     rarestDestination: _rarest(destinationCounts),
+    rarestOrigin: _rarest(originCounts),
     perDay: perDay,
     longestDayStreak: _longestStreak(perDay.keys),
     confidenceMix: confidenceMix,
     bearingBins: bearingBins,
+    airportNames: airportNames,
   );
 }
 
@@ -172,6 +214,16 @@ int _longestStreak(Iterable<DateTime> days) {
 }
 
 DateTime _dayKey(DateTime t) => DateTime(t.year, t.month, t.day);
+
+/// Remember the first non-empty name seen for an airport's code.
+void _recordName(Map<String, String> names, Airport? airport) {
+  final code = airportCode(airport);
+  if (code == null) return;
+  final name = airport?.name?.trim();
+  if (name != null && name.isNotEmpty) {
+    names.putIfAbsent(code, () => name);
+  }
+}
 
 /// Map a bearing (degrees) to an 8-point compass bin, 0 = North.
 int _bearingBin(double bearingDeg) {

@@ -22,6 +22,12 @@ abstract class SightingStore<T> extends ChangeNotifier {
   /// Append [item] and persist the updated list.
   Future<void> add(T item);
 
+  /// Remove [item] (the first matching instance) and persist the result.
+  ///
+  /// No-op when the item is not present. Used to delete an accidental or
+  /// duplicate entry from the logbook.
+  Future<void> remove(T item);
+
   /// Remove all items and persist the empty list.
   Future<void> clear();
 }
@@ -85,6 +91,13 @@ class SharedPrefsSightingStore<T> extends SightingStore<T> {
   }
 
   @override
+  Future<void> remove(T item) async {
+    if (!_items.remove(item)) return;
+    await _persist();
+    notifyListeners();
+  }
+
+  @override
   Future<void> clear() async {
     if (_items.isEmpty) return;
     _items.clear();
@@ -104,6 +117,12 @@ class InMemorySightingStore<T> extends SightingStore<T> {
   @override
   Future<void> add(T item) async {
     _items.add(item);
+    notifyListeners();
+  }
+
+  @override
+  Future<void> remove(T item) async {
+    if (!_items.remove(item)) return;
     notifyListeners();
   }
 

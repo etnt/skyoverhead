@@ -8,8 +8,9 @@
 /// * collecting is not paused ([collectorPausedProvider]),
 /// * the result is a successful pick with a non-null candidate (so the
 ///   "clear skies" `confidence == none` case and errors are never logged), and
-/// * the same `icao24` was not already logged within [dedupWindow] (so holding
-///   on one plane across repeated taps doesn't inflate counts).
+/// * the same `icao24` was not already stored within [dedupWindow] (so holding
+///   on one plane across repeated taps doesn't inflate counts). The check reads
+///   the persisted store, so it also holds across app restarts.
 ///
 /// When collecting is off the store is never touched at all, preserving the
 /// original identify-only behaviour.
@@ -68,8 +69,6 @@ class SightingLogger {
   /// Optional sink for newly-earned rewards detected on each successful log.
   final void Function(List<RewardEvent>)? onReward;
 
-  final Map<String, DateTime> _lastLoggedAt = {};
-
   SightingLogger({
     required this.store,
     required this.isEnabled,
@@ -89,9 +88,9 @@ class SightingLogger {
     if (candidate == null) return; // "clear skies" — nothing to log.
 
     final timestamp = now();
-    final last = _lastLoggedAt[candidate.icao24];
-    if (last != null && timestamp.difference(last) < dedupWindow) {
-      return; // Same aircraft seen again within the window.
+    final lastSeen = _lastCapturedFor(candidate.icao24);
+    if (lastSeen != null && timestamp.difference(lastSeen) < dedupWindow) {
+      return; // Same aircraft already stored within the window.
     }
 
     final before =
@@ -103,8 +102,6 @@ class SightingLogger {
         capturedAt: timestamp,
       ),
     );
-    _lastLoggedAt[candidate.icao24] = timestamp;
-    _prune(timestamp);
 
     final sink = onReward;
     if (sink != null) {
@@ -113,10 +110,14 @@ class SightingLogger {
     }
   }
 
-  /// Drop dedup entries older than the window to keep the map bounded.
-  void _prune(DateTime reference) {
-    _lastLoggedAt.removeWhere(
-      (_, at) => reference.difference(at) >= dedupWindow,
-    );
+  /// The most recent [Sighting.capturedAt] stored for [icao24], or `null` when
+  /// this aircraft has never been logged. Scans newest-first (the store keeps
+  /// sightings in insertion order) and stops at the first match.
+  DateTime? _lastCapturedFor(String icao24) {
+    final all = store.all;
+    for (var i = all.length - 1; i >= 0; i--) {
+      if (all[i].icao24 == icao24) return all[i].capturedAt;
+    }
+    return null;
   }
 }

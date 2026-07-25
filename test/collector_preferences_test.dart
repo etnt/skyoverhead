@@ -28,6 +28,18 @@ void main() {
       expect(reloaded.collectorEnabled, isTrue);
       expect(reloaded.collectorPaused, isTrue);
     });
+
+    test('defaults excluded airports to empty and persists changes', () async {
+      SharedPreferences.setMockInitialValues({});
+      final prefs = await SharedPreferences.getInstance();
+      final store = SharedPrefsCollectorPreferences(prefs);
+      expect(store.excludedAirports, isEmpty);
+
+      await store.setExcludedAirports({'ARN', 'LHR'});
+
+      final reloaded = SharedPrefsCollectorPreferences(prefs);
+      expect(reloaded.excludedAirports, {'ARN', 'LHR'});
+    });
   });
 
   group('collector providers', () {
@@ -63,6 +75,34 @@ void main() {
       await container.read(collectorPausedProvider.notifier).toggle();
       expect(container.read(collectorPausedProvider), isTrue);
       expect(prefs.collectorPaused, isTrue);
+    });
+
+    test('excluded airports add/remove normalises and persists', () async {
+      final prefs = FakeCollectorPreferences();
+      final container = containerWith(prefs);
+      final notifier = container.read(excludedAirportsProvider.notifier);
+
+      await notifier.add('arn');
+      expect(container.read(excludedAirportsProvider), {'ARN'});
+      expect(prefs.excludedAirports, {'ARN'});
+
+      // Adding the same code (any case) is a no-op.
+      await notifier.add('ARN');
+      expect(container.read(excludedAirportsProvider), {'ARN'});
+
+      await notifier.toggle('lhr');
+      expect(container.read(excludedAirportsProvider), {'ARN', 'LHR'});
+
+      await notifier.remove('arn');
+      expect(container.read(excludedAirportsProvider), {'LHR'});
+      expect(prefs.excludedAirports, {'LHR'});
+    });
+
+    test('excluded airports seed from persisted preferences', () {
+      final container = containerWith(
+        FakeCollectorPreferences(excluded: {'ARN'}),
+      );
+      expect(container.read(excludedAirportsProvider), {'ARN'});
     });
 
     test('defaults to a disabled in-memory implementation without an override',

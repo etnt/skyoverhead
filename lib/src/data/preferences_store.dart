@@ -24,17 +24,27 @@ abstract interface class CollectorPreferences {
   /// `false`.
   bool get collectorPaused;
 
+  /// Airport codes (IATA/ICAO, upper-cased) hidden from the Stats top lists.
+  /// Excluded airports are still logged and still appear in the Logbook and
+  /// Collections — this filter only affects statistics presentation. Default
+  /// empty.
+  Set<String> get excludedAirports;
+
   /// Persist [value] as the new [collectorEnabled] state.
   Future<void> setCollectorEnabled(bool value);
 
   /// Persist [value] as the new [collectorPaused] state.
   Future<void> setCollectorPaused(bool value);
+
+  /// Persist [value] as the new [excludedAirports] set.
+  Future<void> setExcludedAirports(Set<String> value);
 }
 
 /// A [CollectorPreferences] backed by [SharedPreferences].
 class SharedPrefsCollectorPreferences implements CollectorPreferences {
   static const String enabledKey = 'collector.enabled';
   static const String pausedKey = 'collector.paused';
+  static const String excludedAirportsKey = 'collector.excludedAirports';
 
   final SharedPreferences _prefs;
 
@@ -47,12 +57,20 @@ class SharedPrefsCollectorPreferences implements CollectorPreferences {
   bool get collectorPaused => _prefs.getBool(pausedKey) ?? false;
 
   @override
+  Set<String> get excludedAirports =>
+      (_prefs.getStringList(excludedAirportsKey) ?? const []).toSet();
+
+  @override
   Future<void> setCollectorEnabled(bool value) =>
       _prefs.setBool(enabledKey, value);
 
   @override
   Future<void> setCollectorPaused(bool value) =>
       _prefs.setBool(pausedKey, value);
+
+  @override
+  Future<void> setExcludedAirports(Set<String> value) =>
+      _prefs.setStringList(excludedAirportsKey, value.toList());
 }
 
 /// A non-persistent [CollectorPreferences] used as a safe default when no
@@ -61,8 +79,13 @@ class SharedPrefsCollectorPreferences implements CollectorPreferences {
 class InMemoryCollectorPreferences implements CollectorPreferences {
   bool enabled;
   bool paused;
+  Set<String> excluded;
 
-  InMemoryCollectorPreferences({this.enabled = false, this.paused = false});
+  InMemoryCollectorPreferences({
+    this.enabled = false,
+    this.paused = false,
+    Set<String>? excluded,
+  }) : excluded = excluded ?? <String>{};
 
   @override
   bool get collectorEnabled => enabled;
@@ -71,8 +94,14 @@ class InMemoryCollectorPreferences implements CollectorPreferences {
   bool get collectorPaused => paused;
 
   @override
+  Set<String> get excludedAirports => excluded;
+
+  @override
   Future<void> setCollectorEnabled(bool value) async => enabled = value;
 
   @override
   Future<void> setCollectorPaused(bool value) async => paused = value;
+
+  @override
+  Future<void> setExcludedAirports(Set<String> value) async => excluded = value;
 }
