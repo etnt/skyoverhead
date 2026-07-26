@@ -8,16 +8,8 @@ Sky Overhead reads your current location, queries live ADS-B traffic near you,
 ranks the candidates by how close they are to being directly overhead, and shows
 the best match enriched with route and registration details.
 
-<table style="width: 100%;">
-  <tr>
-    <td style="width: 50%;">
-      <a href="skyoverhead.png"><img src="skyoverhead.png" alt="Sky Overhead screenshot" style="width: 100%; height: auto;"></a>
-    </td>
-    <td style="width: 50%;">
-      <a href="Pilot-Officer.png"><img src="Pilot-Officer.png" alt="Sky Overhead screenshot 2" style="width: 100%; height: auto;"></a>
-    </td>
-  </tr>
-</table>
+
+<a href="skyoverhead.png"><img src="skyoverhead.png" alt="Sky Overhead screenshot" width="300"></a>
 
 ## Download & install (Android)
 
@@ -72,6 +64,8 @@ Unlocking something shows an instant toast on the Sky tab. Collector mode is
 fully opt-in: pausing stops new logging without touching your data, and turning
 it off deletes the stored sightings, returning the app to its identify-only
 default.
+
+<a href="Pilot-Officer.png"><img src="Pilot-Officer.png" alt="Sky Overhead screenshot 2" height="33%"></a>
 
 ### Observer location
 
