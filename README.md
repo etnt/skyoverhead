@@ -8,7 +8,16 @@ Sky Overhead reads your current location, queries live ADS-B traffic near you,
 ranks the candidates by how close they are to being directly overhead, and shows
 the best match enriched with route and registration details.
 
-<a href="skyoverhead.png"><img src="skyoverhead.png" alt="Sky Overhead screenshot" width="300"></a>
+<table style="width: 100%;">
+  <tr>
+    <td style="width: 50%;">
+      <a href="skyoverhead.png"><img src="skyoverhead.png" alt="Sky Overhead screenshot" style="width: 100%; height: auto;"></a>
+    </td>
+    <td style="width: 50%;">
+      <a href="Pilot-Officer.png"><img src="Pilot-Officer.png" alt="Sky Overhead screenshot 2" style="width: 100%; height: auto;"></a>
+    </td>
+  </tr>
+</table>
 
 ## Download & install (Android)
 
