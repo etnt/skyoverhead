@@ -65,7 +65,7 @@ fully opt-in: pausing stops new logging without touching your data, and turning
 it off deletes the stored sightings, returning the app to its identify-only
 default.
 
-<a href="Pilot-Officer.png"><img src="Pilot-Officer.png" alt="Sky Overhead screenshot 2" height="33%"></a>
+<a href="Pilot-Officer.png"><img src="Pilot-Officer.png" alt="Sky Overhead screenshot 2" width="33%"></a>
 
 ### Observer location
 
