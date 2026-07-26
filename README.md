@@ -9,7 +9,7 @@ ranks the candidates by how close they are to being directly overhead, and shows
 the best match enriched with route and registration details.
 
 
-<a href="skyoverhead.png"><img src="skyoverhead.png" alt="Sky Overhead screenshot" width="300"></a>
+<a href="skyoverhead.png"><img src="skyoverhead.png" alt="Sky Overhead screenshot" width="33%"></a>
 
 ## Download & install (Android)
 
