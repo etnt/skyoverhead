@@ -85,6 +85,11 @@ class Candidate {
   final Airport? destination;
   final double altitudeM;
   final AltitudeSource altitudeSource;
+
+  /// Barometric altitude in metres, when reported by OpenSky. This is the
+  /// pressure altitude a pilot reads off the instruments, kept alongside
+  /// [altitudeM] (which prefers the geometric/GPS value).
+  final double? baroAltitudeM;
   final double distanceKm;
   final double bearingDeg;
   final double elevationDeg;
@@ -106,6 +111,7 @@ class Candidate {
     this.destination,
     required this.altitudeM,
     required this.altitudeSource,
+    this.baroAltitudeM,
     required this.distanceKm,
     required this.bearingDeg,
     required this.elevationDeg,
@@ -140,6 +146,7 @@ class Candidate {
       destination: destination ?? this.destination,
       altitudeM: altitudeM,
       altitudeSource: altitudeSource,
+      baroAltitudeM: baroAltitudeM,
       distanceKm: distanceKm,
       bearingDeg: bearingDeg,
       elevationDeg: elevationDeg,

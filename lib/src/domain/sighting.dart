@@ -28,6 +28,9 @@ class Sighting {
   final Airport? origin;
   final Airport? destination;
   final double altitudeM;
+
+  /// Barometric (pressure) altitude in metres, when OpenSky reported one.
+  final double? baroAltitudeM;
   final double? speedMps;
   final double distanceKm;
   final double bearingDeg;
@@ -48,6 +51,7 @@ class Sighting {
     this.origin,
     this.destination,
     required this.altitudeM,
+    this.baroAltitudeM,
     this.speedMps,
     required this.distanceKm,
     required this.bearingDeg,
@@ -75,6 +79,7 @@ class Sighting {
       origin: candidate.origin,
       destination: candidate.destination,
       altitudeM: candidate.altitudeM,
+      baroAltitudeM: candidate.baroAltitudeM,
       speedMps: candidate.speedMps,
       distanceKm: candidate.distanceKm,
       bearingDeg: candidate.bearingDeg,
@@ -100,6 +105,7 @@ class Sighting {
         destination: destination,
         altitudeM: altitudeM,
         altitudeSource: AltitudeSource.none,
+        baroAltitudeM: baroAltitudeM,
         distanceKm: distanceKm,
         bearingDeg: bearingDeg,
         elevationDeg: elevationDeg,
@@ -122,6 +128,7 @@ class Sighting {
         if (origin != null) 'origin': _airportToJson(origin!),
         if (destination != null) 'destination': _airportToJson(destination!),
         'altitudeM': altitudeM,
+        if (baroAltitudeM != null) 'baroAltitudeM': baroAltitudeM,
         if (speedMps != null) 'speedMps': speedMps,
         'distanceKm': distanceKm,
         'bearingDeg': bearingDeg,
@@ -146,6 +153,7 @@ class Sighting {
       origin: _airportFromJson(json['origin']),
       destination: _airportFromJson(json['destination']),
       altitudeM: _toDouble(json['altitudeM']),
+      baroAltitudeM: _toDoubleOrNull(json['baroAltitudeM']),
       speedMps: _toDoubleOrNull(json['speedMps']),
       distanceKm: _toDouble(json['distanceKm']),
       bearingDeg: _toDouble(json['bearingDeg']),

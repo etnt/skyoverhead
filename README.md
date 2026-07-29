@@ -40,6 +40,20 @@ Prebuilt Android APKs are published on the repository's
 5. Present the result — or a friendly "Clear skies" message when nothing
    qualifies.
 
+### Altitude: geometric vs. barometric
+
+OpenSky reports two altitudes for each aircraft, and Sky Overhead shows both
+when they're available:
+
+- **Altitude** — the *geometric* (GPS) altitude, i.e. the aircraft's true height
+  above mean sea level. This is what the app prefers for ranking and records,
+  falling back to the barometric value only when GPS altitude is missing.
+- **Baro alt.** — the *barometric* (pressure) altitude. This is the reading the
+  pilot sees on the instruments, derived from air pressure relative to a
+  standard reference. It can differ from the geometric altitude by hundreds of
+  metres depending on the local weather and pressure setting.
+
+
 ## Collect & Medals
 
 By default Sky Overhead simply identifies what's overhead and remembers nothing.

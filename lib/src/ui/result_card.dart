@@ -149,6 +149,11 @@ class _Metrics extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final speed = fmt.speedText(candidate.speedMps);
+    final baroAlt = candidate.baroAltitudeM;
+    // Show barometric altitude separately only when it adds information, i.e.
+    // when the primary altitude isn't already the barometric value.
+    final showBaro =
+        baroAlt != null && candidate.altitudeSource != AltitudeSource.barometric;
     final metrics = <(IconData, String, String)>[
       (Icons.height, 'Elevation', fmt.elevationText(candidate.elevationDeg)),
       (Icons.explore, 'Bearing', fmt.bearingText(candidate.bearingDeg)),
@@ -158,6 +163,12 @@ class _Metrics extends StatelessWidget {
         'Altitude',
         fmt.altitudeText(candidate.altitudeM, candidate.altitudeSource),
       ),
+      if (showBaro)
+        (
+          Icons.flight,
+          'Baro alt.',
+          fmt.altitudeText(baroAlt, AltitudeSource.none),
+        ),
       if (speed != null) (Icons.speed, 'Speed', speed),
     ];
 

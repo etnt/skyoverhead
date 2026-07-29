@@ -59,6 +59,7 @@ Candidate? _build(AircraftState state, Observer observer, int now) {
     callsign: state.callsign,
     altitudeM: alt,
     altitudeSource: source,
+    baroAltitudeM: state.baroAltitude,
     distanceKm: _round(dist, 2),
     bearingDeg: _round(brg, 1),
     elevationDeg: _round(elev, 1),
