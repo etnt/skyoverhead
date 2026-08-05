@@ -65,22 +65,30 @@ String candidateHeadline(Candidate c) {
   return c.icao24.toUpperCase();
 }
 
-/// Aircraft type + registration subtitle, e.g. "Airbus A320 · D-AIZE".
-String? aircraftSubtitle(Candidate c) {
-  final parts = <String>[];
+/// The best "aircraft type" phrase for display or a web search, combining
+/// manufacturer and model (e.g. "Airbus A320"), or null when neither is
+/// known. Avoids repeating the manufacturer when the model already starts
+/// with it (e.g. model "Boeing 737" with manufacturer "Boeing").
+String? aircraftTypeLabel(Candidate c) {
   final model = c.model?.trim();
   final manufacturer = c.manufacturer?.trim();
   if (model != null && model.isNotEmpty) {
     if (manufacturer != null &&
         manufacturer.isNotEmpty &&
         !model.toLowerCase().startsWith(manufacturer.toLowerCase())) {
-      parts.add('$manufacturer $model');
-    } else {
-      parts.add(model);
+      return '$manufacturer $model';
     }
-  } else if (manufacturer != null && manufacturer.isNotEmpty) {
-    parts.add(manufacturer);
+    return model;
   }
+  if (manufacturer != null && manufacturer.isNotEmpty) return manufacturer;
+  return null;
+}
+
+/// Aircraft type + registration subtitle, e.g. "Airbus A320 · D-AIZE".
+String? aircraftSubtitle(Candidate c) {
+  final parts = <String>[];
+  final type = aircraftTypeLabel(c);
+  if (type != null) parts.add(type);
   final reg = c.registration?.trim();
   if (reg != null && reg.isNotEmpty) parts.add(reg);
   return parts.isEmpty ? null : parts.join(' · ');

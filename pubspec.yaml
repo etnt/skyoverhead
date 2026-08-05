@@ -43,6 +43,8 @@ dependencies:
   flutter_riverpod: ^2.5.0
   # On-device persistence for collector opt-in prefs and saved sightings.
   shared_preferences: ^2.3.0
+  # Opens an external web search for a spotted aircraft type.
+  url_launcher: ^6.3.0
 
 dev_dependencies:
   flutter_test:

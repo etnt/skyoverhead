@@ -11,6 +11,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../config/identify_config.dart';
 import '../data/aircraft_service.dart';
 import '../data/errors.dart';
+import '../data/mock_aircraft_service.dart';
 import '../domain/models.dart';
 import 'sighting_logger.dart';
 
@@ -84,6 +85,10 @@ class IdentifyController extends StateNotifier<IdentifyUiState> {
 
 /// Override this in `main` (or tests) to supply the concrete service.
 final aircraftServiceProvider = Provider<AircraftService>((ref) {
+  // Debug aid: `--dart-define=MOCK_IDENTIFY=true` returns a fixed sighting
+  // instead of hitting the live APIs (useful on emulators).
+  const mockIdentify = bool.fromEnvironment('MOCK_IDENTIFY');
+  if (mockIdentify) return MockAircraftService();
   return AircraftService.networked();
 });
 

@@ -4,6 +4,7 @@ library;
 import 'package:flutter/material.dart';
 
 import '../domain/models.dart';
+import 'aircraft_search.dart';
 import 'format.dart' as fmt;
 
 class ResultCard extends StatelessWidget {
@@ -62,7 +63,7 @@ class ResultCard extends StatelessWidget {
                 ],
                 if (subtitle != null) ...[
                   const SizedBox(height: 8),
-                  Text(subtitle, style: theme.textTheme.bodyMedium),
+                  _TypeLine(candidate: candidate, subtitle: subtitle),
                 ],
                 if (hasRoute) ...[
                   const SizedBox(height: 8),
@@ -120,12 +121,50 @@ class _Photo extends StatelessWidget {
   }
 }
 
+/// The aircraft type + registration line. When the type is known it becomes a
+/// tappable link that opens an external web search for that aircraft type.
+class _TypeLine extends StatelessWidget {
+  final Candidate candidate;
+  final String subtitle;
+
+  const _TypeLine({required this.candidate, required this.subtitle});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final canSearch = fmt.aircraftTypeLabel(candidate) != null;
+    if (!canSearch) {
+      return Text(subtitle, style: theme.textTheme.bodyMedium);
+    }
+    return InkWell(
+      onTap: () => launchAircraftSearch(candidate),
+      borderRadius: BorderRadius.circular(4),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Flexible(
+            child: Text(
+              subtitle,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.primary,
+                decoration: TextDecoration.underline,
+                decorationColor: theme.colorScheme.primary,
+              ),
+            ),
+          ),
+          const SizedBox(width: 4),
+          Icon(Icons.search, size: 16, color: theme.colorScheme.primary),
+        ],
+      ),
+    );
+  }
+}
+
 class _RouteLine extends StatelessWidget {
   final IconData icon;
   final String label;
 
   const _RouteLine({required this.icon, required this.label});
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
