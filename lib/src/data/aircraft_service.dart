@@ -10,6 +10,7 @@ library;
 import '../config/identify_config.dart';
 import '../domain/models.dart';
 import '../domain/ranking.dart' as ranking;
+import '../domain/route_check.dart' as route_check;
 import 'adsbdb_client.dart';
 import 'errors.dart';
 import 'http.dart';
@@ -74,9 +75,17 @@ class AircraftService {
     }
 
     final enriched = await _adsbdb.enrich(primary);
+    final checked = enriched.copyWith(
+      routePlausibility: route_check.evaluateRoute(
+        observerLat: observer.lat,
+        observerLon: observer.lon,
+        origin: enriched.origin,
+        destination: enriched.destination,
+      ),
+    );
     return IdentifyResult.ok(
       confidence: selection.confidence,
-      candidate: enriched,
+      candidate: checked,
       alternatives: selection.alternatives,
       observedAt: observedAt,
     );

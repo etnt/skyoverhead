@@ -42,6 +42,25 @@ void main() {
     });
   });
 
+  group('corridorDistanceKm', () {
+    test('a point on the segment is ~zero', () {
+      expect(corridorDistanceKm(0.0, 0.0, 0.0, 10.0, 0.0, 5.0),
+          closeTo(0.0, 1.0));
+    });
+
+    test('perpendicular offset is the cross-track distance', () {
+      // Segment runs east along the equator; point is 1 degree north of it.
+      expect(corridorDistanceKm(0.0, 0.0, 0.0, 10.0, 1.0, 5.0),
+          closeTo(111.19, 1.0));
+    });
+
+    test('a point beyond an endpoint measures to that endpoint', () {
+      // Point is 10 degrees east of B(0,10), past the end of the segment.
+      expect(corridorDistanceKm(0.0, 0.0, 0.0, 10.0, 0.0, 20.0),
+          closeTo(1111.9, 5.0));
+    });
+  });
+
   group('parseState', () {
     test('handles nulls and trims the callsign', () {
       final vec = <dynamic>[

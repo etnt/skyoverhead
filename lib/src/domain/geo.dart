@@ -61,6 +61,52 @@ double bearingDeg(double lat1, double lon1, double lat2, double lon2) {
   return norm360(_rad2deg(math.atan2(y, x)));
 }
 
+/// Shortest great-circle distance in kilometres from point `p` to the path
+/// segment running from `a` to `b`.
+///
+/// When `p` projects onto the segment this is the perpendicular
+/// (cross-track) distance to the great circle; when it projects beyond an
+/// endpoint it is the distance to the nearer endpoint. Used to judge whether
+/// an observed position lies anywhere near a claimed origin->destination
+/// route.
+double corridorDistanceKm(
+  double aLat,
+  double aLon,
+  double bLat,
+  double bLon,
+  double pLat,
+  double pLon,
+) {
+  final dAB = distanceKm(aLat, aLon, bLat, bLon);
+  final dAP = distanceKm(aLat, aLon, pLat, pLon);
+  final dBP = distanceKm(bLat, bLon, pLat, pLon);
+  // Degenerate path (origin == destination): fall back to point distance.
+  if (dAB == 0.0) return dAP;
+
+  final d13 = dAP / earthKm; // angular distance A->P
+  final theta13 = _deg2rad(bearingDeg(aLat, aLon, pLat, pLon));
+  final theta12 = _deg2rad(bearingDeg(aLat, aLon, bLat, bLon));
+  final xt = math.asin(math.sin(d13) * math.sin(theta13 - theta12));
+  final xtKm = xt.abs() * earthKm;
+
+  // Along-track distances from each end; if the projection falls outside the
+  // segment, one of these exceeds the segment length.
+  final atFromA = _alongTrackKm(d13, xt);
+  final d23 = dBP / earthKm; // angular distance B->P
+  final atFromB = _alongTrackKm(d23, xt);
+  final withinSegment = atFromA <= dAB && atFromB <= dAB;
+
+  return withinSegment ? xtKm : math.min(dAP, dBP);
+}
+
+/// Along-track distance (km) given angular distance to the point and the
+/// cross-track angle, per the standard great-circle formulae.
+double _alongTrackKm(double angularToPoint, double crossTrack) {
+  final ratio =
+      (math.cos(angularToPoint) / math.cos(crossTrack)).clamp(-1.0, 1.0);
+  return math.acos(ratio) * earthKm;
+}
+
 /// Elevation angle in degrees from horizontal distance and relative height (m).
 double elevationDeg(double relHeightM, double horizM) {
   if (horizM == 0.0) return 90.0;

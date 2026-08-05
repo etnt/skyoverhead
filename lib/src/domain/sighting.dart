@@ -39,6 +39,11 @@ class Sighting {
   final String? photoUrl;
   final EnrichmentStatus? enrichmentStatus;
 
+  /// Whether the enriched route matched the observed position at capture time.
+  /// Computed once during identification (the observer location is not
+  /// otherwise persisted), so it is stored rather than recomputed.
+  final RoutePlausibility routePlausibility;
+
   const Sighting({
     required this.capturedAt,
     required this.icao24,
@@ -59,6 +64,7 @@ class Sighting {
     required this.confidence,
     this.photoUrl,
     this.enrichmentStatus,
+    this.routePlausibility = RoutePlausibility.unknown,
   });
 
   /// Snapshot a ranked [candidate] into a persistable sighting.
@@ -87,6 +93,7 @@ class Sighting {
       confidence: confidence,
       photoUrl: candidate.photoUrl,
       enrichmentStatus: candidate.enrichmentStatus,
+      routePlausibility: candidate.routePlausibility,
     );
   }
 
@@ -113,6 +120,7 @@ class Sighting {
         positionAgeS: 0,
         photoUrl: photoUrl,
         enrichmentStatus: enrichmentStatus,
+        routePlausibility: routePlausibility,
       );
 
   Map<String, dynamic> toJson() => {
@@ -137,6 +145,8 @@ class Sighting {
         if (photoUrl != null) 'photoUrl': photoUrl,
         if (enrichmentStatus != null)
           'enrichmentStatus': enrichmentStatus!.name,
+        if (routePlausibility != RoutePlausibility.unknown)
+          'routePlausibility': routePlausibility.name,
       };
 
   factory Sighting.fromJson(Map<String, dynamic> json) {
@@ -161,6 +171,7 @@ class Sighting {
       confidence: _confidenceFromName(json['confidence'] as String?),
       photoUrl: json['photoUrl'] as String?,
       enrichmentStatus: _enrichmentFromName(json['enrichmentStatus'] as String?),
+      routePlausibility: _plausibilityFromName(json['routePlausibility'] as String?),
     );
   }
 }
@@ -169,6 +180,8 @@ Map<String, dynamic> _airportToJson(Airport a) => {
       if (a.icao != null) 'icao': a.icao,
       if (a.iata != null) 'iata': a.iata,
       if (a.name != null) 'name': a.name,
+      if (a.latitude != null) 'latitude': a.latitude,
+      if (a.longitude != null) 'longitude': a.longitude,
     };
 
 Airport? _airportFromJson(dynamic json) {
@@ -177,6 +190,8 @@ Airport? _airportFromJson(dynamic json) {
     icao: json['icao'] as String?,
     iata: json['iata'] as String?,
     name: json['name'] as String?,
+    latitude: _toDoubleOrNull(json['latitude']),
+    longitude: _toDoubleOrNull(json['longitude']),
   );
 }
 
@@ -199,4 +214,12 @@ EnrichmentStatus? _enrichmentFromName(String? name) {
     if (value.name == name) return value;
   }
   return null;
+}
+
+RoutePlausibility _plausibilityFromName(String? name) {
+  if (name == null) return RoutePlausibility.unknown;
+  for (final value in RoutePlausibility.values) {
+    if (value.name == name) return value;
+  }
+  return RoutePlausibility.unknown;
 }

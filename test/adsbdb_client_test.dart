@@ -24,11 +24,13 @@ const String _dlh804Body = '''
       "airline": { "name": "Lufthansa", "icao": "DLH", "iata": "LH" },
       "origin": {
         "icao_code": "EDDF", "iata_code": "FRA",
-        "name": "Frankfurt am Main Airport"
+        "name": "Frankfurt am Main Airport",
+        "latitude": 50.033333, "longitude": 8.570556
       },
       "destination": {
         "icao_code": "ESSA", "iata_code": "ARN",
-        "name": "Stockholm-Arlanda Airport"
+        "name": "Stockholm-Arlanda Airport",
+        "latitude": 59.651944, "longitude": 17.918611
       }
     }
   }
@@ -71,8 +73,11 @@ void main() {
       expect(fields.airline, 'Lufthansa');
       expect(fields.photoUrl, contains('001727401.jpg'));
       expect(fields.origin?.iata, 'FRA');
+      expect(fields.origin?.latitude, closeTo(50.033333, 1e-6));
+      expect(fields.origin?.longitude, closeTo(8.570556, 1e-6));
       expect(fields.destination?.icao, 'ESSA');
       expect(fields.destination?.name, 'Stockholm-Arlanda Airport');
+      expect(fields.destination?.latitude, closeTo(59.651944, 1e-6));
     });
 
     test('returns empty fields for an "unknown aircraft" string response', () {

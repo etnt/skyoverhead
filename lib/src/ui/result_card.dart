@@ -76,6 +76,11 @@ class ResultCard extends StatelessWidget {
                     icon: Icons.flight_land,
                     label: destination ?? 'Unknown destination',
                   ),
+                  if (candidate.routePlausibility ==
+                      RoutePlausibility.implausible) ...[
+                    const SizedBox(height: 6),
+                    const _RouteCaveat(),
+                  ],
                 ],
                 const SizedBox(height: 16),
                 _Metrics(candidate: candidate),
@@ -156,6 +161,33 @@ class _TypeLine extends StatelessWidget {
           Icon(Icons.search, size: 16, color: theme.colorScheme.primary),
         ],
       ),
+    );
+  }
+}
+
+/// A short caveat shown when the enriched route doesn't line up with where the
+/// aircraft was actually seen (the ADSBDB route is keyed only by callsign and
+/// can be stale or wrong).
+class _RouteCaveat extends StatelessWidget {
+  const _RouteCaveat();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final color = theme.colorScheme.error;
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(Icons.warning_amber_rounded, size: 16, color: color),
+        const SizedBox(width: 6),
+        Expanded(
+          child: Text(
+            "This route doesn't match where the aircraft was seen, so it may "
+            'be inaccurate.',
+            style: theme.textTheme.bodySmall?.copyWith(color: color),
+          ),
+        ),
+      ],
     );
   }
 }

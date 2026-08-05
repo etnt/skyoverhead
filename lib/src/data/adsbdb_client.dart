@@ -96,6 +96,8 @@ class AdsbdbClient {
       icao: _str(map['icao_code']),
       iata: _str(map['iata_code']),
       name: _str(map['name']),
+      latitude: _double(map['latitude']),
+      longitude: _double(map['longitude']),
     );
     if (airport.icao == null && airport.iata == null && airport.name == null) {
       return null;
@@ -107,6 +109,8 @@ class AdsbdbClient {
 
   static String? _str(Object? v) =>
       v is String && v.isNotEmpty ? v : null;
+
+  static double? _double(Object? v) => v is num ? v.toDouble() : null;
 }
 
 /// The subset of fields ADSBDB can contribute to a candidate.

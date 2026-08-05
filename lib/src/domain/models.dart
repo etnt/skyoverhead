@@ -14,6 +14,16 @@ enum AltitudeSource { geometric, barometric, none }
 /// Result of an enrichment lookup for the primary candidate.
 enum EnrichmentStatus { ok, unavailable }
 
+/// Whether the enriched origin/destination route is geographically
+/// consistent with where the aircraft was actually observed.
+///
+/// The route comes from ADSBDB keyed only by callsign (a scheduled
+/// flight-number mapping), so it can disagree with the live position — e.g.
+/// a "Bournemouth -> Bergerac" route shown for a plane over Stockholm.
+/// [implausible] flags such mismatches; [unknown] means we lacked the
+/// airport coordinates needed to judge.
+enum RoutePlausibility { plausible, implausible, unknown }
+
 /// The fixed observer location an identification is relative to.
 class Observer {
   final double lat;
@@ -67,7 +77,18 @@ class Airport {
   final String? iata;
   final String? name;
 
-  const Airport({this.icao, this.iata, this.name});
+  /// Airport position in degrees, when known (supplied by ADSBDB). Used to
+  /// sanity-check that a route is consistent with the observed position.
+  final double? latitude;
+  final double? longitude;
+
+  const Airport({
+    this.icao,
+    this.iata,
+    this.name,
+    this.latitude,
+    this.longitude,
+  });
 }
 
 /// A ranked aircraft candidate. Positional fields come from OpenSky;
@@ -99,6 +120,10 @@ class Candidate {
   final String? photoUrl;
   final EnrichmentStatus? enrichmentStatus;
 
+  /// Whether the enriched route is consistent with the observed position.
+  /// Populated by the service after enrichment; defaults to [unknown].
+  final RoutePlausibility routePlausibility;
+
   const Candidate({
     required this.icao24,
     this.callsign,
@@ -120,6 +145,7 @@ class Candidate {
     required this.positionAgeS,
     this.photoUrl,
     this.enrichmentStatus,
+    this.routePlausibility = RoutePlausibility.unknown,
   });
 
   Candidate copyWith({
@@ -132,6 +158,7 @@ class Candidate {
     Airport? destination,
     String? photoUrl,
     EnrichmentStatus? enrichmentStatus,
+    RoutePlausibility? routePlausibility,
   }) {
     return Candidate(
       icao24: icao24,
@@ -155,6 +182,7 @@ class Candidate {
       positionAgeS: positionAgeS,
       photoUrl: photoUrl ?? this.photoUrl,
       enrichmentStatus: enrichmentStatus ?? this.enrichmentStatus,
+      routePlausibility: routePlausibility ?? this.routePlausibility,
     );
   }
 }

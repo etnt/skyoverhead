@@ -10,8 +10,20 @@ Candidate _fullCandidate() => const Candidate(
       model: 'A320',
       airline: 'Lufthansa',
       registeredOwnerOperator: 'Lufthansa',
-      origin: Airport(icao: 'EDDF', iata: 'FRA', name: 'Frankfurt am Main'),
-      destination: Airport(icao: 'ESSA', iata: 'ARN', name: 'Stockholm Arlanda'),
+      origin: Airport(
+        icao: 'EDDF',
+        iata: 'FRA',
+        name: 'Frankfurt am Main',
+        latitude: 50.03,
+        longitude: 8.57,
+      ),
+      destination: Airport(
+        icao: 'ESSA',
+        iata: 'ARN',
+        name: 'Stockholm Arlanda',
+        latitude: 59.65,
+        longitude: 17.92,
+      ),
       altitudeM: 10500.0,
       altitudeSource: AltitudeSource.geometric,
       distanceKm: 12.34,
@@ -22,6 +34,7 @@ Candidate _fullCandidate() => const Candidate(
       positionAgeS: 4,
       photoUrl: 'https://example.com/photo.jpg',
       enrichmentStatus: EnrichmentStatus.ok,
+      routePlausibility: RoutePlausibility.plausible,
     );
 
 /// A positional-only candidate: enrichment failed, so route/airline are absent.
@@ -82,9 +95,13 @@ void main() {
       expect(restored.toJson(), original.toJson());
       expect(restored.capturedAt, original.capturedAt);
       expect(restored.origin?.name, 'Frankfurt am Main');
+      expect(restored.origin?.latitude, 50.03);
+      expect(restored.origin?.longitude, 8.57);
       expect(restored.destination?.iata, 'ARN');
+      expect(restored.destination?.latitude, 59.65);
       expect(restored.confidence, Confidence.high);
       expect(restored.enrichmentStatus, EnrichmentStatus.ok);
+      expect(restored.routePlausibility, RoutePlausibility.plausible);
     });
 
     test('a partial (unavailable-enrichment) sighting round-trips', () {
