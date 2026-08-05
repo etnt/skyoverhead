@@ -40,6 +40,20 @@ Prebuilt Android APKs are published on the repository's
 5. Present the result — or a friendly "Clear skies" message when nothing
    qualifies.
 
+In the result card you can **tap the aircraft type** to open a Google search
+for that model, handy for reading up on an unfamiliar airframe.
+
+### Route plausibility
+
+ADSBDB's route (origin → destination) is looked up by callsign alone, so a
+reused or stale flight number can return a route that has nothing to do with
+where the aircraft actually is. Sky Overhead sanity-checks each route against
+your observing position: it measures how far you are from the great-circle
+corridor between the two airports, and if that gap is implausibly large
+(over 300 km) the result card shows a caveat that the route may be inaccurate.
+Routes without airport coordinates are left unflagged.
+
+
 ### Altitude: geometric vs. barometric
 
 OpenSky reports two altitudes for each aircraft, and Sky Overhead shows both
