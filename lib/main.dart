@@ -3,9 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'src/data/preferences_store.dart';
+import 'src/data/saved_location_store.dart';
 import 'src/data/sighting_store.dart';
 import 'src/domain/sighting.dart';
 import 'src/state/collector_provider.dart';
+import 'src/state/saved_locations_provider.dart';
 import 'src/state/sighting_logger.dart';
 import 'src/ui/app_shell.dart';
 
@@ -24,6 +26,9 @@ Future<void> main() async {
             toJson: (s) => s.toJson(),
             fromJson: Sighting.fromJson,
           ),
+        ),
+        savedLocationStoreProvider.overrideWithValue(
+          SharedPrefsSavedLocationStore(prefs: prefs),
         ),
       ],
       child: const SkyOverheadApp(),

@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/location_service.dart';
 import 'config_provider.dart';
+import 'saved_locations_provider.dart';
 
 /// UI-facing state for the "use my location" action.
 sealed class LocationUiState {
@@ -50,6 +51,16 @@ class LocationController extends StateNotifier<LocationUiState> {
         longitude: fix.longitude,
         elevationM: fix.elevationM ?? config.elevationM,
       );
+      // A fresh GPS fix no longer corresponds to any saved location.
+      _ref
+          .read(savedLocationsProvider.notifier)
+          .syncActiveForConfig(
+            config.copyWith(
+              latitude: fix.latitude,
+              longitude: fix.longitude,
+              elevationM: fix.elevationM ?? config.elevationM,
+            ),
+          );
       state = const LocationIdle();
       return true;
     } on LocationException catch (e) {
@@ -64,5 +75,5 @@ class LocationController extends StateNotifier<LocationUiState> {
 
 final locationControllerProvider =
     StateNotifierProvider<LocationController, LocationUiState>((ref) {
-  return LocationController(ref, ref.watch(locationServiceProvider));
-});
+      return LocationController(ref, ref.watch(locationServiceProvider));
+    });
