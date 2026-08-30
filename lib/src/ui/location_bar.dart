@@ -1,14 +1,11 @@
 /// The observer-location row: current coordinates, a "use my location"
-/// action, and a manual-entry fallback.
-///
-/// No new buttons: saving and switching between saved locations is layered
-/// onto the two existing icon buttons —
+/// action, and a location picker.
 ///
 /// * GPS button: tap = get current location; **long-press** = save the current
 ///   position under a name.
-/// * Edit button: tap = manual entry (with a saved-locations dropdown and an
-///   optional name to save the entry as); **long-press** = manage saved
-///   locations (apply one by tapping, or delete it).
+/// * Edit button: open the location picker — a single dialog with two parts:
+///   pick a saved location (tap to load, trash to delete) or enter a new one
+///   (with an optional name to save it).
 library;
 
 import 'package:flutter/material.dart';
@@ -75,9 +72,8 @@ class LocationBar extends ConsumerWidget {
               : const Icon(Icons.gps_fixed),
         ),
         IconButton(
-          tooltip: 'Enter location (hold for saved locations)',
+          tooltip: 'Pick or enter a location',
           onPressed: () => _editLocation(context, ref, config),
-          onLongPress: () => _manageLocations(context, ref),
           icon: const Icon(Icons.edit_location_alt_outlined),
         ),
       ],
@@ -118,7 +114,7 @@ class LocationBar extends ConsumerWidget {
     }
   }
 
-  /// Tap on the edit button: manual entry, optionally saving a named entry.
+  /// Tap the edit button: pick a saved location or enter a new one.
   Future<void> _editLocation(
     BuildContext context,
     WidgetRef ref,
@@ -126,7 +122,7 @@ class LocationBar extends ConsumerWidget {
   ) async {
     final result = await showDialog<_ManualLocationResult>(
       context: context,
-      builder: (_) => _ManualLocationDialog(current: current),
+      builder: (_) => _LocationDialog(current: current),
     );
     if (result == null) return;
     ref.read(identifyConfigProvider.notifier).state = result.config;
@@ -136,20 +132,11 @@ class LocationBar extends ConsumerWidget {
           .save(result.saveAsName!, result.config);
     } else {
       // A plain manual entry matches the active label only when its
-      // coordinates exactly equal a saved location (e.g. picked from the
-      // dropdown without typing a name).
+      // coordinates exactly equal a saved location.
       ref
           .read(savedLocationsProvider.notifier)
           .syncActiveForConfig(result.config);
     }
-  }
-
-  /// Long-press on the edit button: manage saved locations.
-  Future<void> _manageLocations(BuildContext context, WidgetRef ref) async {
-    await showDialog<void>(
-      context: context,
-      builder: (_) => const _SavedLocationsDialog(),
-    );
   }
 }
 
@@ -163,24 +150,21 @@ class _ManualLocationResult {
   const _ManualLocationResult(this.config, this.saveAsName);
 }
 
-class _ManualLocationDialog extends ConsumerStatefulWidget {
+/// The location picker: two clear parts — pick a saved location (tap to load,
+/// trash to delete) or enter a new one (with an optional name to save it).
+class _LocationDialog extends ConsumerStatefulWidget {
   final IdentifyConfig current;
-  const _ManualLocationDialog({required this.current});
+  const _LocationDialog({required this.current});
 
   @override
-  ConsumerState<_ManualLocationDialog> createState() =>
-      _ManualLocationDialogState();
+  ConsumerState<_LocationDialog> createState() => _LocationDialogState();
 }
 
-class _ManualLocationDialogState extends ConsumerState<_ManualLocationDialog> {
+class _LocationDialogState extends ConsumerState<_LocationDialog> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _lat;
   late final TextEditingController _lon;
   late final TextEditingController _name;
-
-  /// Elevation to apply on submit. Seeded from the current config and updated
-  /// when a saved location is picked from the dropdown (which has no field).
-  late double _elevationM;
 
   @override
   void initState() {
@@ -188,7 +172,6 @@ class _ManualLocationDialogState extends ConsumerState<_ManualLocationDialog> {
     _lat = TextEditingController(text: widget.current.latitude.toString());
     _lon = TextEditingController(text: widget.current.longitude.toString());
     _name = TextEditingController();
-    _elevationM = widget.current.elevationM;
   }
 
   @override
@@ -207,12 +190,18 @@ class _ManualLocationDialogState extends ConsumerState<_ManualLocationDialog> {
     return null;
   }
 
-  void _submit() {
+  /// Load a saved location as the observing position and close the dialog.
+  void _load(SavedLocation entry) {
+    ref.read(savedLocationsProvider.notifier).apply(entry);
+    Navigator.of(context).pop();
+  }
+
+  /// Apply the manually entered coordinates, saving under a name when given.
+  void _submitNew() {
     if (!_formKey.currentState!.validate()) return;
     final config = widget.current.copyWith(
       latitude: double.parse(_lat.text.trim()),
       longitude: double.parse(_lon.text.trim()),
-      elevationM: _elevationM,
     );
     final name = _name.text.trim();
     Navigator.of(
@@ -222,6 +211,7 @@ class _ManualLocationDialogState extends ConsumerState<_ManualLocationDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     const numeric = TextInputType.numberWithOptions(
       decimal: true,
       signed: true,
@@ -232,55 +222,74 @@ class _ManualLocationDialogState extends ConsumerState<_ManualLocationDialog> {
     final saved = ref.watch(savedLocationsProvider);
 
     return AlertDialog(
-      title: const Text('Enter location'),
-      content: Form(
-        key: _formKey,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (saved.isNotEmpty)
-              DropdownButtonFormField<String>(
-                decoration: const InputDecoration(labelText: 'Saved locations'),
-                hint: const Text('Pick a saved location'),
-                items: [
+      title: const Text('Location'),
+      content: SizedBox(
+        width: double.maxFinite,
+        child: SingleChildScrollView(
+          child: Form(
+            key: _formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text('Saved locations', style: theme.textTheme.titleSmall),
+                if (saved.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    child: Text(
+                      'None yet. Enter a location below and give it a name to '
+                      'save it here.',
+                      style: theme.textTheme.bodySmall,
+                    ),
+                  )
+                else
                   for (final entry in saved)
-                    DropdownMenuItem(value: entry.id, child: Text(entry.name)),
-                ],
-                onChanged: (id) {
-                  if (id == null) return;
-                  final entry = saved.firstWhere((e) => e.id == id);
-                  setState(() {
-                    _lat.text = entry.latitude.toString();
-                    _lon.text = entry.longitude.toString();
-                    _elevationM = entry.elevationM;
-                  });
-                },
-              ),
-            if (saved.isNotEmpty) const SizedBox(height: 8),
-            TextFormField(
-              controller: _lat,
-              keyboardType: numeric,
-              inputFormatters: inputFormatters,
-              decoration: const InputDecoration(labelText: 'Latitude'),
-              validator: (v) => _validate(v, -90.0, 90.0),
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: const Icon(Icons.place_outlined),
+                      title: Text(entry.name),
+                      subtitle: Text(
+                        '${entry.latitude.toStringAsFixed(4)}, '
+                        '${entry.longitude.toStringAsFixed(4)}',
+                      ),
+                      onTap: () => _load(entry),
+                      trailing: IconButton(
+                        tooltip: 'Delete ${entry.name}',
+                        icon: const Icon(Icons.delete_outline),
+                        onPressed: () => ref
+                            .read(savedLocationsProvider.notifier)
+                            .delete(entry.id),
+                      ),
+                    ),
+                const Divider(height: 24),
+                Text('Enter a new location', style: theme.textTheme.titleSmall),
+                const SizedBox(height: 8),
+                TextFormField(
+                  controller: _lat,
+                  keyboardType: numeric,
+                  inputFormatters: inputFormatters,
+                  decoration: const InputDecoration(labelText: 'Latitude'),
+                  validator: (v) => _validate(v, -90.0, 90.0),
+                ),
+                const SizedBox(height: 8),
+                TextFormField(
+                  controller: _lon,
+                  keyboardType: numeric,
+                  inputFormatters: inputFormatters,
+                  decoration: const InputDecoration(labelText: 'Longitude'),
+                  validator: (v) => _validate(v, -180.0, 180.0),
+                ),
+                const SizedBox(height: 8),
+                TextFormField(
+                  controller: _name,
+                  decoration: const InputDecoration(
+                    labelText: 'Name (optional)',
+                    helperText: 'Give it a name to save it above',
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 8),
-            TextFormField(
-              controller: _lon,
-              keyboardType: numeric,
-              inputFormatters: inputFormatters,
-              decoration: const InputDecoration(labelText: 'Longitude'),
-              validator: (v) => _validate(v, -180.0, 180.0),
-            ),
-            const SizedBox(height: 8),
-            TextFormField(
-              controller: _name,
-              decoration: const InputDecoration(
-                labelText: 'Name (optional)',
-                helperText: 'Fill in to also save this location',
-              ),
-            ),
-          ],
+          ),
         ),
       ),
       actions: [
@@ -288,7 +297,7 @@ class _ManualLocationDialogState extends ConsumerState<_ManualLocationDialog> {
           onPressed: () => Navigator.of(context).pop(),
           child: const Text('Cancel'),
         ),
-        FilledButton(onPressed: _submit, child: const Text('Save')),
+        FilledButton(onPressed: _submitNew, child: const Text('Set location')),
       ],
     );
   }
@@ -350,65 +359,6 @@ class _SaveLocationNameDialogState extends State<_SaveLocationNameDialog> {
           child: const Text('Cancel'),
         ),
         FilledButton(onPressed: _submit, child: const Text('Save')),
-      ],
-    );
-  }
-}
-
-/// Long-press on the edit button: list saved locations; tapping an entry
-/// applies it, the trailing icon deletes it.
-class _SavedLocationsDialog extends ConsumerWidget {
-  const _SavedLocationsDialog();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final saved = ref.watch(savedLocationsProvider);
-
-    return AlertDialog(
-      title: const Text('Saved locations'),
-      content: saved.isEmpty
-          ? const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 16),
-              child: Text(
-                'No saved locations yet.\n\n'
-                'Save one by holding the GPS button, or by filling in a name '
-                'when entering a location.',
-              ),
-            )
-          : SizedBox(
-              width: double.maxFinite,
-              child: ListView.builder(
-                shrinkWrap: true,
-                itemCount: saved.length,
-                itemBuilder: (context, index) {
-                  final entry = saved[index];
-                  final coords =
-                      '${entry.latitude.toStringAsFixed(4)}, '
-                      '${entry.longitude.toStringAsFixed(4)}';
-                  return ListTile(
-                    leading: const Icon(Icons.place_outlined),
-                    title: Text(entry.name),
-                    subtitle: Text(coords),
-                    onTap: () {
-                      ref.read(savedLocationsProvider.notifier).apply(entry);
-                      Navigator.of(context).pop();
-                    },
-                    trailing: IconButton(
-                      tooltip: 'Delete ${entry.name}',
-                      icon: const Icon(Icons.delete_outline),
-                      onPressed: () => ref
-                          .read(savedLocationsProvider.notifier)
-                          .delete(entry.id),
-                    ),
-                  );
-                },
-              ),
-            ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Close'),
-        ),
       ],
     );
   }
