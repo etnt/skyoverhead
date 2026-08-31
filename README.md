@@ -1,5 +1,7 @@
 # Sky Overhead
 
+<a href='https://ko-fi.com/G8L3263HSM' target='_blank'><img height='36' style='border:0px;height:36px;' src='https://storage.ko-fi.com/cdn/kofi6.png?v=6' border='0' alt='Buy Me a Coffee at ko-fi.com' /></a>aaaa
+
 Tap a button to identify the aircraft flying overhead, using public
 [OpenSky Network](https://opensky-network.org/) and
 [ADSBDB](https://www.adsbdb.com/) data.
