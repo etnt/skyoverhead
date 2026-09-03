@@ -45,6 +45,10 @@ dependencies:
   shared_preferences: ^2.3.0
   # Opens an external web search for a spotted aircraft type.
   url_launcher: ^6.3.0
+  # GitHub Releases update check (Option A: notify and open).
+  auto_upgrade:
+    git:
+      url: https://github.com/etnt/auto_upgrade.git
 
 dev_dependencies:
   flutter_test:

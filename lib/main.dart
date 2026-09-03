@@ -1,10 +1,13 @@
+import 'package:auto_upgrade/auto_upgrade.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'src/config/app_version.dart';
 import 'src/data/preferences_store.dart';
 import 'src/data/saved_location_store.dart';
 import 'src/data/sighting_store.dart';
+import 'src/data/update_service.dart';
 import 'src/domain/sighting.dart';
 import 'src/state/collector_provider.dart';
 import 'src/state/saved_locations_provider.dart';
@@ -29,6 +32,16 @@ Future<void> main() async {
         ),
         savedLocationStoreProvider.overrideWithValue(
           SharedPrefsSavedLocationStore(prefs: prefs),
+        ),
+        releaseCheckerProvider.overrideWithValue(
+          ReleaseChecker(
+            owner: 'etnt',
+            repo: 'skyoverhead',
+            currentVersion: appVersion,
+            // Throttles the GitHub check to at most once per interval
+            // across restarts. Errors and 'dev' builds stay silent.
+            checkStore: SharedPrefsUpdateCheckStore(prefs),
+          ),
         ),
       ],
       child: const SkyOverheadApp(),

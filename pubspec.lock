@@ -25,6 +25,15 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.13.1"
+  auto_upgrade:
+    dependency: "direct main"
+    description:
+      path: "."
+      ref: HEAD
+      resolved-ref: f265a170b01bba60f1b34f778909fc8ae9646a5c
+      url: "https://github.com/etnt/auto_upgrade.git"
+    source: git
+    version: "0.1.0"
   boolean_selector:
     dependency: transitive
     description:
