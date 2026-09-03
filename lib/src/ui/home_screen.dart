@@ -4,8 +4,10 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../config/app_version.dart';
+import '../data/update_service.dart';
 import '../domain/reward.dart';
 import '../state/collector_provider.dart';
 import '../state/config_provider.dart';
@@ -16,6 +18,7 @@ import 'location_bar.dart';
 import 'rank_badge.dart';
 import 'result_card.dart';
 import 'settings_dialog.dart';
+import 'update_prompt.dart';
 
 /// The most reward snackbars to surface from a single log, to avoid flooding
 /// the Sky tab when a notable first sighting unlocks several things at once.
@@ -33,6 +36,39 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   /// (false). Defaults to the medal; a scan reveals the result, and the medal
   /// button brings it back.
   bool _showMedal = true;
+
+  /// Ensures the startup update check runs at most once per state instance.
+  bool _updateCheckStarted = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Fire-and-forget update check (Option A), deferred to after the first
+    // frame so the dialog never collides with the initial build.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _checkForUpdate());
+  }
+
+  /// Runs the throttled GitHub Releases check and, on a newer release, shows
+  /// the acknowledgment dialog. "Update now" opens the release page in the
+  /// browser — nothing opens without the user's explicit tap.
+  void _checkForUpdate() {
+    if (_updateCheckStarted || !mounted) return;
+    _updateCheckStarted = true;
+    final checker = ref.read(releaseCheckerProvider);
+    maybeShowUpdateDialog(
+      context,
+      checker: checker,
+      onUpdate: (info) async {
+        final uri = Uri.tryParse(info.releasePageUrl);
+        if (uri == null) return;
+        try {
+          // Handle a `false`/throw result silently: the user can still find
+          // the release page in the repository.
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
+        } catch (_) {}
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
