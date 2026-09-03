@@ -33,6 +33,19 @@ Prebuilt Android APKs are published on the repository's
 > installing apps outside the App Store, so iOS requires building from source on
 > a Mac (see below) or App Store distribution.
 
+### Update checks
+
+On launch the app checks the GitHub [Releases](../../releases) page for a newer
+version and, if one exists, shows a dialog offering to open the release page in
+your browser (nothing is downloaded or installed automatically — you tap
+**Update now** to go to the page). To stay well within GitHub's anonymous API
+limits (60 requests/hour per IP), this check runs **at most once every 24 hours**:
+after a successful check the result is remembered, so publishing a new release won't
+surface a prompt on devices that already checked within the last day until that window
+elapses. Clearing the app's storage (or reinstalling) resets the window and
+forces a fresh check on the next launch. Development builds (no `APP_VERSION`
+set) skip the check entirely.
+
 ## How it works
 
 1. Resolve the observer's position via device GPS (`geolocator`).
