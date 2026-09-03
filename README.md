@@ -1,7 +1,5 @@
 # Sky Overhead
 
-<a href='https://ko-fi.com/G8L3263HSM' target='_blank'><img height='36' style='border:0px;height:36px;' src='https://storage.ko-fi.com/cdn/kofi6.png?v=6' border='0' alt='Buy Me a Coffee at ko-fi.com' /></a>
-
 Tap a button to identify the aircraft flying overhead, using public
 [OpenSky Network](https://opensky-network.org/) and
 [ADSBDB](https://www.adsbdb.com/) data.
@@ -10,8 +8,11 @@ Sky Overhead reads your current location, queries live ADS-B traffic near you,
 ranks the candidates by how close they are to being directly overhead, and shows
 the best match enriched with route and registration details.
 
-
-<a href="skyoverhead.png"><img src="skyoverhead.png" alt="Sky Overhead screenshot" width="33%"></a>
+<a href="screenshots/identify.jpeg"><img src="screenshots/identify.jpeg" alt="Identify screenshot" width="19%"></a>
+<a href="screenshots/medals.jpeg"><img src="screenshots/medals.jpeg" alt="Medals screenshot" width="19%"></a>
+<a href="screenshots/logbook.jpeg"><img src="screenshots/logbook.jpeg" alt="Logbook screenshot" width="19%"></a>
+<a href="screenshots/stats1.jpeg"><img src="screenshots/stats1.jpeg" alt="Stats 1 screenshot" width="19%"></a>
+<a href="screenshots/stats2.jpeg"><img src="screenshots/stats2.jpeg" alt="Stats 2 screenshot" width="19%"></a>
 
 ## Download & install (Android)
 
