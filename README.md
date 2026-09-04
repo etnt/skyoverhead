@@ -46,6 +46,8 @@ elapses. Clearing the app's storage (or reinstalling) resets the window and
 forces a fresh check on the next launch. Development builds (no `APP_VERSION`
 set) skip the check entirely.
 
+<a href="screenshots/update_available.jpeg"><img src="screenshots/update_available.jpeg" alt="Update available creenshot" width="19%"></a>
+
 ## How it works
 
 1. Resolve the observer's position via device GPS (`geolocator`).
