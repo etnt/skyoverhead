@@ -13,6 +13,7 @@ import '../domain/records.dart';
 import '../domain/statistics.dart';
 import '../state/collector_provider.dart';
 import '../state/statistics_provider.dart';
+import 'aircraft_search.dart';
 import 'airport_search.dart';
 import 'format.dart' as fmt;
 
@@ -68,6 +69,7 @@ class StatsScreen extends ConsumerWidget {
                   _TopList(
                     title: 'Top aircraft types',
                     tallies: stats.topTypes,
+                    searchAircraftTypes: true,
                   ),
                   const SizedBox(height: 24),
                   _StatCard(
@@ -297,11 +299,15 @@ class _TopList extends StatelessWidget {
   /// When set, each row can be long-pressed to hide that airport from stats.
   final void Function(String code)? onHide;
 
+  /// Enables Google search links for aircraft types.
+  final bool searchAircraftTypes;
+
   const _TopList({
     required this.title,
     required this.tallies,
     this.names,
     this.onHide,
+    this.searchAircraftTypes = false,
   });
 
   @override
@@ -325,16 +331,19 @@ class _TopList extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Expanded(
-                            child: names == null
+                            child: names == null && !searchAircraftTypes
                                 ? Text(t.key)
                                 : Tooltip(
                                     message:
-                                        'Search Google for ${names![t.key] ?? t.key}',
+                                        'Search Google for ${names?[t.key] ?? t.key}',
                                     child: InkWell(
-                                      onTap: () => launchAirportSearch(
-                                        name: names![t.key],
-                                        codes: [t.key],
-                                      ),
+                                      onTap: searchAircraftTypes
+                                          ? () =>
+                                                launchAircraftTypeSearch(t.key)
+                                          : () => launchAirportSearch(
+                                              name: names?[t.key],
+                                              codes: [t.key],
+                                            ),
                                       borderRadius: BorderRadius.circular(4),
                                       child: Row(
                                         children: [

@@ -21,7 +21,9 @@ void main() {
   group('aircraftTypeLabel', () {
     test('combines manufacturer and model', () {
       expect(
-        fmt.aircraftTypeLabel(_candidate(manufacturer: 'Airbus', model: 'A320')),
+        fmt.aircraftTypeLabel(
+          _candidate(manufacturer: 'Airbus', model: 'A320'),
+        ),
         'Airbus A320',
       );
     });
@@ -37,7 +39,10 @@ void main() {
 
     test('falls back to model or manufacturer alone', () {
       expect(fmt.aircraftTypeLabel(_candidate(model: 'A320')), 'A320');
-      expect(fmt.aircraftTypeLabel(_candidate(manufacturer: 'Airbus')), 'Airbus');
+      expect(
+        fmt.aircraftTypeLabel(_candidate(manufacturer: 'Airbus')),
+        'Airbus',
+      );
     });
 
     test('is null when neither is known', () {
@@ -47,8 +52,9 @@ void main() {
 
   group('aircraftSearchUri', () {
     test('builds a Google search for the aircraft type', () {
-      final uri =
-          aircraftSearchUri(_candidate(manufacturer: 'Airbus', model: 'A320'));
+      final uri = aircraftSearchUri(
+        _candidate(manufacturer: 'Airbus', model: 'A320'),
+      );
       expect(uri, isNotNull);
       expect(uri!.host, 'www.google.com');
       expect(uri.path, '/search');
@@ -57,6 +63,19 @@ void main() {
 
     test('is null when the aircraft type is unknown', () {
       expect(aircraftSearchUri(_candidate()), isNull);
+    });
+  });
+
+  group('aircraftTypeSearchUri', () {
+    test('builds a search for a trimmed aircraft type label', () {
+      final uri = aircraftTypeSearchUri('  A320  ');
+      expect(uri?.host, 'www.google.com');
+      expect(uri?.path, '/search');
+      expect(uri?.queryParameters['q'], 'A320 aircraft');
+    });
+
+    test('is null when the aircraft type label is blank', () {
+      expect(aircraftTypeSearchUri('  '), isNull);
     });
   });
 }

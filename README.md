@@ -60,7 +60,8 @@ set) skip the check entirely.
 
 In the result card, tap the **aircraft type** to search Google for that model,
 or tap either **airport** in the route to search Google for its name and codes.
-Airport links are also available in the Stats top-origin and top-destination lists.
+Stats also links aircraft types and airports in its top-type, top-origin, and
+top-destination lists.
 
 ### Route plausibility
 

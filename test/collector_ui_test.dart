@@ -360,6 +360,12 @@ void main() {
       expect(find.text('Records'), findsOneWidget);
       expect(find.text('Highest altitude'), findsOneWidget);
       expect(find.text('Closest'), findsOneWidget);
+      await tester.scrollUntilVisible(
+        find.text('Top aircraft types'),
+        300,
+        scrollable: find.byType(Scrollable).last,
+      );
+      expect(find.byTooltip('Search Google for A320'), findsOneWidget);
     });
 
     testWidgets('shows the empty state with no sightings', (tester) async {
