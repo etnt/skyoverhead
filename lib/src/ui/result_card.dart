@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 import '../domain/models.dart';
 import 'aircraft_search.dart';
+import 'airport_search.dart';
 import 'format.dart' as fmt;
 
 class ResultCard extends StatelessWidget {
@@ -25,8 +26,9 @@ class ResultCard extends StatelessWidget {
     final destination = fmt.airportLabel(candidate.destination);
     final hasRoute = origin != null || destination != null;
     final airline = candidate.airline?.trim();
-    final operator =
-        (airline != null && airline.isNotEmpty) ? airline : candidate.registeredOwnerOperator?.trim();
+    final operator = (airline != null && airline.isNotEmpty)
+        ? airline
+        : candidate.registeredOwnerOperator?.trim();
     final unavailable =
         candidate.enrichmentStatus == EnrichmentStatus.unavailable;
 
@@ -50,8 +52,9 @@ class ResultCard extends StatelessWidget {
                     Expanded(
                       child: Text(
                         fmt.candidateHeadline(candidate),
-                        style: theme.textTheme.headlineSmall
-                            ?.copyWith(fontWeight: FontWeight.bold),
+                        style: theme.textTheme.headlineSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                     _ConfidenceBadge(confidence: confidence),
@@ -70,11 +73,13 @@ class ResultCard extends StatelessWidget {
                   _RouteLine(
                     icon: Icons.flight_takeoff,
                     label: origin ?? 'Unknown origin',
+                    airport: candidate.origin,
                   ),
                   const SizedBox(height: 4),
                   _RouteLine(
                     icon: Icons.flight_land,
                     label: destination ?? 'Unknown destination',
+                    airport: candidate.destination,
                   ),
                   if (candidate.routePlausibility ==
                       RoutePlausibility.implausible) ...[
@@ -195,18 +200,55 @@ class _RouteCaveat extends StatelessWidget {
 class _RouteLine extends StatelessWidget {
   final IconData icon;
   final String label;
+  final Airport? airport;
 
-  const _RouteLine({required this.icon, required this.label});
+  const _RouteLine({required this.icon, required this.label, this.airport});
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final searchable =
+        airportSearchUri(
+          name: airport?.name,
+          codes: [airport?.iata, airport?.icao],
+        ) !=
+        null;
+    final textStyle = theme.textTheme.bodyMedium?.copyWith(
+      color: searchable ? theme.colorScheme.primary : null,
+      decoration: searchable ? TextDecoration.underline : null,
+      decorationColor: searchable ? theme.colorScheme.primary : null,
+    );
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Icon(icon, size: 16, color: theme.colorScheme.primary),
         const SizedBox(width: 6),
         Expanded(
-          child: Text(label, style: theme.textTheme.bodyMedium),
+          child: searchable
+              ? Tooltip(
+                  message: 'Search Google for $label',
+                  child: InkWell(
+                    onTap: () => launchAirportSearch(
+                      name: airport?.name,
+                      codes: [airport?.iata, airport?.icao],
+                    ),
+                    borderRadius: BorderRadius.circular(4),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Flexible(child: Text(label, style: textStyle)),
+                        const SizedBox(width: 4),
+                        Icon(
+                          Icons.search,
+                          size: 16,
+                          color: theme.colorScheme.primary,
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              : Text(label, style: textStyle),
         ),
       ],
     );
@@ -224,7 +266,8 @@ class _Metrics extends StatelessWidget {
     // Show barometric altitude separately only when it adds information, i.e.
     // when the primary altitude isn't already the barometric value.
     final showBaro =
-        baroAlt != null && candidate.altitudeSource != AltitudeSource.barometric;
+        baroAlt != null &&
+        candidate.altitudeSource != AltitudeSource.barometric;
     final metrics = <(IconData, String, String)>[
       (Icons.height, 'Elevation', fmt.elevationText(candidate.elevationDeg)),
       (Icons.explore, 'Bearing', fmt.bearingText(candidate.bearingDeg)),
@@ -259,11 +302,7 @@ class _Metric extends StatelessWidget {
   final String label;
   final String value;
 
-  const _Metric({
-    required this.icon,
-    required this.label,
-    required this.value,
-  });
+  const _Metric({required this.icon, required this.label, required this.value});
 
   @override
   Widget build(BuildContext context) {
@@ -290,8 +329,9 @@ class _Metric extends StatelessWidget {
           const SizedBox(height: 2),
           Text(
             value,
-            style: theme.textTheme.titleMedium
-                ?.copyWith(fontWeight: FontWeight.w600),
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ],
       ),
@@ -309,17 +349,17 @@ class _ConfidenceBadge extends StatelessWidget {
     final (Color bg, Color fg) = switch (confidence) {
       Confidence.high => (scheme.primaryContainer, scheme.onPrimaryContainer),
       Confidence.medium => (
-          scheme.secondaryContainer,
-          scheme.onSecondaryContainer,
-        ),
+        scheme.secondaryContainer,
+        scheme.onSecondaryContainer,
+      ),
       Confidence.ambiguous => (
-          scheme.tertiaryContainer,
-          scheme.onTertiaryContainer,
-        ),
+        scheme.tertiaryContainer,
+        scheme.onTertiaryContainer,
+      ),
       Confidence.none => (
-          scheme.surfaceContainerHighest,
-          scheme.onSurfaceVariant,
-        ),
+        scheme.surfaceContainerHighest,
+        scheme.onSurfaceVariant,
+      ),
     };
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -329,10 +369,10 @@ class _ConfidenceBadge extends StatelessWidget {
       ),
       child: Text(
         fmt.confidenceLabel(confidence),
-        style: Theme.of(context)
-            .textTheme
-            .labelMedium
-            ?.copyWith(color: fg, fontWeight: FontWeight.w600),
+        style: Theme.of(context).textTheme.labelMedium?.copyWith(
+          color: fg,
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }

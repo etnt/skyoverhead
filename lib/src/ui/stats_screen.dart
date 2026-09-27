@@ -13,6 +13,7 @@ import '../domain/records.dart';
 import '../domain/statistics.dart';
 import '../state/collector_provider.dart';
 import '../state/statistics_provider.dart';
+import 'airport_search.dart';
 import 'format.dart' as fmt;
 
 class StatsScreen extends ConsumerWidget {
@@ -64,7 +65,10 @@ class StatsScreen extends ConsumerWidget {
                   const SizedBox(height: 16),
                   _TopList(title: 'Top airlines', tallies: stats.topAirlines),
                   const SizedBox(height: 16),
-                  _TopList(title: 'Top aircraft types', tallies: stats.topTypes),
+                  _TopList(
+                    title: 'Top aircraft types',
+                    tallies: stats.topTypes,
+                  ),
                   const SizedBox(height: 24),
                   _StatCard(
                     title: 'Activity',
@@ -72,17 +76,23 @@ class StatsScreen extends ConsumerWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         _summaryRow('Total sightings', '${stats.total}'),
-                        _summaryRow('Longest day streak',
-                            '${stats.longestDayStreak} day'
-                            '${stats.longestDayStreak == 1 ? '' : 's'}'),
+                        _summaryRow(
+                          'Longest day streak',
+                          '${stats.longestDayStreak} day'
+                              '${stats.longestDayStreak == 1 ? '' : 's'}',
+                        ),
                         if (stats.rarestDestination != null)
-                          _summaryRow('Rarest destination',
-                              '${stats.rarestDestination!.key} '
-                              '(${stats.rarestDestination!.count})'),
+                          _summaryRow(
+                            'Rarest destination',
+                            '${stats.rarestDestination!.key} '
+                                '(${stats.rarestDestination!.count})',
+                          ),
                         if (stats.rarestOrigin != null)
-                          _summaryRow('Rarest origin',
-                              '${stats.rarestOrigin!.key} '
-                              '(${stats.rarestOrigin!.count})'),
+                          _summaryRow(
+                            'Rarest origin',
+                            '${stats.rarestOrigin!.key} '
+                                '(${stats.rarestOrigin!.count})',
+                          ),
                         const SizedBox(height: 12),
                         SizedBox(
                           height: 96,
@@ -99,7 +109,8 @@ class StatsScreen extends ConsumerWidget {
                     title: 'Bearings',
                     child: Center(
                       child: Semantics(
-                        label: 'Compass rose showing the directions aircraft '
+                        label:
+                            'Compass rose showing the directions aircraft '
                             'were seen from',
                         child: SizedBox(
                           width: 180,
@@ -108,11 +119,12 @@ class StatsScreen extends ConsumerWidget {
                             painter: _CompassRosePainter(
                               bins: stats.bearingBins,
                               color: Theme.of(context).colorScheme.primary,
-                              gridColor:
-                                  Theme.of(context).colorScheme.outlineVariant,
-                              labelColor: Theme.of(context)
-                                  .colorScheme
-                                  .onSurfaceVariant,
+                              gridColor: Theme.of(
+                                context,
+                              ).colorScheme.outlineVariant,
+                              labelColor: Theme.of(
+                                context,
+                              ).colorScheme.onSurfaceVariant,
                             ),
                           ),
                         ),
@@ -126,18 +138,21 @@ class StatsScreen extends ConsumerWidget {
   }
 
   Widget _summaryRow(String label, String value) => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(label),
-            Text(value, style: const TextStyle(fontWeight: FontWeight.w600)),
-          ],
-        ),
-      );
+    padding: const EdgeInsets.symmetric(vertical: 4),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label),
+        Text(value, style: const TextStyle(fontWeight: FontWeight.w600)),
+      ],
+    ),
+  );
 
   Future<void> _confirmHide(
-      BuildContext context, WidgetRef ref, String code) async {
+    BuildContext context,
+    WidgetRef ref,
+    String code,
+  ) async {
     final hide = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -211,8 +226,9 @@ class _HiddenAirportsSheet extends ConsumerWidget {
                   for (final code in codes)
                     InputChip(
                       label: Text(code),
-                      onDeleted: () =>
-                          ref.read(excludedAirportsProvider.notifier).remove(code),
+                      onDeleted: () => ref
+                          .read(excludedAirportsProvider.notifier)
+                          .remove(code),
                       deleteIcon: const Icon(Icons.close, size: 18),
                       deleteButtonTooltipMessage: 'Restore $code',
                     ),
@@ -302,27 +318,76 @@ class _TopList extends StatelessWidget {
               children: [
                 for (final t in tallies)
                   InkWell(
-                    onLongPress:
-                        onHide == null ? null : () => onHide!(t.key),
+                    onLongPress: onHide == null ? null : () => onHide!(t.key),
                     child: Padding(
                       padding: const EdgeInsets.symmetric(vertical: 6),
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(t.key),
-                                if (names?[t.key] case final name?)
-                                  Text(
-                                    name,
-                                    style: theme.textTheme.bodySmall?.copyWith(
-                                      color: theme.colorScheme.onSurfaceVariant,
+                            child: names == null
+                                ? Text(t.key)
+                                : Tooltip(
+                                    message:
+                                        'Search Google for ${names![t.key] ?? t.key}',
+                                    child: InkWell(
+                                      onTap: () => launchAirportSearch(
+                                        name: names![t.key],
+                                        codes: [t.key],
+                                      ),
+                                      borderRadius: BorderRadius.circular(4),
+                                      child: Row(
+                                        children: [
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  t.key,
+                                                  style: TextStyle(
+                                                    color: theme
+                                                        .colorScheme
+                                                        .primary,
+                                                    decoration: TextDecoration
+                                                        .underline,
+                                                    decorationColor: theme
+                                                        .colorScheme
+                                                        .primary,
+                                                  ),
+                                                ),
+                                                if (names?[t.key]
+                                                    case final name?)
+                                                  Text(
+                                                    name,
+                                                    style: theme
+                                                        .textTheme
+                                                        .bodySmall
+                                                        ?.copyWith(
+                                                          color: theme
+                                                              .colorScheme
+                                                              .primary,
+                                                          decoration:
+                                                              TextDecoration
+                                                                  .underline,
+                                                          decorationColor: theme
+                                                              .colorScheme
+                                                              .primary,
+                                                        ),
+                                                  ),
+                                              ],
+                                            ),
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Icon(
+                                            Icons.search,
+                                            size: 16,
+                                            color: theme.colorScheme.primary,
+                                          ),
+                                        ],
+                                      ),
                                     ),
                                   ),
-                              ],
-                            ),
                           ),
                           Text('${t.count}'),
                         ],
@@ -388,8 +453,10 @@ class _BarChart extends StatelessWidget {
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 1),
                   child: Container(
-                    height: (constraints.maxHeight * c / maxCount)
-                        .clamp(c > 0 ? 3.0 : 0.0, constraints.maxHeight),
+                    height: (constraints.maxHeight * c / maxCount).clamp(
+                      c > 0 ? 3.0 : 0.0,
+                      constraints.maxHeight,
+                    ),
                     decoration: BoxDecoration(
                       color: c > 0
                           ? scheme.primary

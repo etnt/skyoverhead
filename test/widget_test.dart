@@ -20,23 +20,23 @@ class _FakeService implements AircraftService {
 final _observedAt = DateTime.utc(2026, 7, 18);
 
 Candidate _candidate() => const Candidate(
-      icao24: '3c6745',
-      callsign: 'DLH804',
-      registration: 'D-AIZE',
-      manufacturer: 'Airbus',
-      model: 'A320 214',
-      airline: 'Lufthansa',
-      origin: Airport(icao: 'EDDF', iata: 'FRA', name: 'Frankfurt'),
-      destination: Airport(icao: 'ESSA', iata: 'ARN', name: 'Arlanda'),
-      altitudeM: 10000.0,
-      altitudeSource: AltitudeSource.geometric,
-      distanceKm: 0.5,
-      bearingDeg: 45.0,
-      elevationDeg: 88.0,
-      speedMps: 230.0,
-      positionAgeS: 2,
-      enrichmentStatus: EnrichmentStatus.ok,
-    );
+  icao24: '3c6745',
+  callsign: 'DLH804',
+  registration: 'D-AIZE',
+  manufacturer: 'Airbus',
+  model: 'A320 214',
+  airline: 'Lufthansa',
+  origin: Airport(icao: 'EDDF', iata: 'FRA', name: 'Frankfurt'),
+  destination: Airport(icao: 'ESSA', iata: 'ARN', name: 'Arlanda'),
+  altitudeM: 10000.0,
+  altitudeSource: AltitudeSource.geometric,
+  distanceKm: 0.5,
+  bearingDeg: 45.0,
+  elevationDeg: 88.0,
+  speedMps: 230.0,
+  positionAgeS: 2,
+  enrichmentStatus: EnrichmentStatus.ok,
+);
 
 Widget _app(IdentifyResult result) {
   return ProviderScope(
@@ -49,9 +49,7 @@ Widget _app(IdentifyResult result) {
 
 void main() {
   testWidgets('shows the idle prompt on first load', (tester) async {
-    await tester.pumpWidget(
-      _app(IdentifyResult.none(observedAt: _observedAt)),
-    );
+    await tester.pumpWidget(_app(IdentifyResult.none(observedAt: _observedAt)));
 
     expect(find.text("What's overhead?"), findsOneWidget);
     expect(find.text('Point at the sky'), findsOneWidget);
@@ -77,12 +75,12 @@ void main() {
     expect(find.text('High confidence'), findsOneWidget);
     expect(find.text('Frankfurt (FRA)'), findsOneWidget);
     expect(find.text('Arlanda (ARN)'), findsOneWidget);
+    expect(find.byTooltip('Search Google for Frankfurt (FRA)'), findsOneWidget);
+    expect(find.byTooltip('Search Google for Arlanda (ARN)'), findsOneWidget);
   });
 
   testWidgets('tap shows clear-skies empty state for no match', (tester) async {
-    await tester.pumpWidget(
-      _app(IdentifyResult.none(observedAt: _observedAt)),
-    );
+    await tester.pumpWidget(_app(IdentifyResult.none(observedAt: _observedAt)));
 
     await tester.tap(find.text("What's overhead?"));
     await tester.pumpAndSettle();
@@ -108,4 +106,3 @@ void main() {
     expect(find.text('Try again'), findsOneWidget);
   });
 }
-

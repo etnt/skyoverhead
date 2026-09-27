@@ -58,8 +58,9 @@ set) skip the check entirely.
 5. Present the result — or a friendly "Clear skies" message when nothing
    qualifies.
 
-In the result card you can **tap the aircraft type** to open a Google search
-for that model, handy for reading up on an unfamiliar airframe.
+In the result card, tap the **aircraft type** to search Google for that model,
+or tap either **airport** in the route to search Google for its name and codes.
+Airport links are also available in the Stats top-origin and top-destination lists.
 
 ### Route plausibility
 

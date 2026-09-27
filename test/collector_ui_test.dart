@@ -112,16 +112,18 @@ Future<ProviderContainer> _pumpApp(
 
 void main() {
   group('AppShell tab gating', () {
-    testWidgets('hides collector tabs when Collector mode is off',
-        (tester) async {
+    testWidgets('hides collector tabs when Collector mode is off', (
+      tester,
+    ) async {
       await _pumpApp(tester, enabled: false);
 
       expect(find.byType(NavigationBar), findsNothing);
       expect(find.text("What's overhead?"), findsOneWidget);
     });
 
-    testWidgets('shows Sky and Logbook tabs when Collector mode is on',
-        (tester) async {
+    testWidgets('shows Sky and Logbook tabs when Collector mode is on', (
+      tester,
+    ) async {
       await _pumpApp(tester, enabled: true);
 
       expect(find.byType(NavigationBar), findsOneWidget);
@@ -136,11 +138,7 @@ void main() {
     });
 
     testWidgets('tapping the Logbook tab shows the logbook', (tester) async {
-      await _pumpApp(
-        tester,
-        enabled: true,
-        seed: [_sighting()],
-      );
+      await _pumpApp(tester, enabled: true, seed: [_sighting()]);
 
       await tester.tap(find.text('Logbook'));
       await tester.pumpAndSettle();
@@ -148,6 +146,30 @@ void main() {
       // Nav label + the LogbookScreen app bar title.
       expect(find.text('Logbook'), findsNWidgets(2));
       expect(find.text('DLH804'), findsOneWidget);
+    });
+
+    testWidgets('shows searchable airport links in Stats', (tester) async {
+      await _pumpApp(
+        tester,
+        enabled: true,
+        seed: [
+          _sighting(
+            origin: const Airport(iata: 'FRA', name: 'Frankfurt'),
+            destination: const Airport(iata: 'ARN', name: 'Stockholm Arlanda'),
+          ),
+        ],
+      );
+
+      await tester.tap(find.text('Stats'));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('Top destinations'));
+      await tester.pumpAndSettle();
+
+      expect(find.byTooltip('Search Google for Frankfurt'), findsOneWidget);
+      expect(
+        find.byTooltip('Search Google for Stockholm Arlanda'),
+        findsOneWidget,
+      );
     });
   });
 
@@ -174,8 +196,7 @@ void main() {
       expect(newestY, lessThan(oldestY));
     });
 
-    testWidgets('shows the empty state when nothing collected',
-        (tester) async {
+    testWidgets('shows the empty state when nothing collected', (tester) async {
       await _pumpApp(tester, enabled: true);
 
       await tester.tap(find.text('Logbook'));
@@ -207,8 +228,9 @@ void main() {
   });
 
   group('Disabling Collector mode', () {
-    testWidgets('confirms, then wipes stored sightings and hides tabs',
-        (tester) async {
+    testWidgets('confirms, then wipes stored sightings and hides tabs', (
+      tester,
+    ) async {
       final container = await _pumpApp(
         tester,
         enabled: true,
@@ -221,9 +243,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Toggle Collector mode off.
-      await tester.tap(
-        find.widgetWithText(SwitchListTile, 'Collector mode'),
-      );
+      await tester.tap(find.widgetWithText(SwitchListTile, 'Collector mode'));
       await tester.pumpAndSettle();
 
       // Confirmation dialog appears; confirm the destructive wipe.
@@ -241,8 +261,9 @@ void main() {
       expect(find.byType(NavigationBar), findsNothing);
     });
 
-    testWidgets('cancelling the confirmation keeps data and mode on',
-        (tester) async {
+    testWidgets('cancelling the confirmation keeps data and mode on', (
+      tester,
+    ) async {
       final container = await _pumpApp(
         tester,
         enabled: true,
@@ -251,9 +272,7 @@ void main() {
 
       await tester.tap(find.byIcon(Icons.tune));
       await tester.pumpAndSettle();
-      await tester.tap(
-        find.widgetWithText(SwitchListTile, 'Collector mode'),
-      );
+      await tester.tap(find.widgetWithText(SwitchListTile, 'Collector mode'));
       await tester.pumpAndSettle();
 
       // The confirmation dialog is on top; its Cancel is the last in the tree.
@@ -271,17 +290,15 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            sightingStoreProvider
-                .overrideWithValue(InMemorySightingStore<Sighting>()),
+            sightingStoreProvider.overrideWithValue(
+              InMemorySightingStore<Sighting>(),
+            ),
           ],
           child: const MaterialApp(home: LogbookScreen()),
         ),
       );
 
-      expect(
-        find.textContaining('Point at the sky'),
-        findsOneWidget,
-      );
+      expect(find.textContaining('Point at the sky'), findsOneWidget);
     });
   });
 
@@ -291,8 +308,9 @@ void main() {
       expect(find.text('Medals'), findsOneWidget);
     });
 
-    testWidgets('reflects seeded sightings in tiers and collections',
-        (tester) async {
+    testWidgets('reflects seeded sightings in tiers and collections', (
+      tester,
+    ) async {
       await _pumpApp(
         tester,
         enabled: true,
@@ -323,13 +341,16 @@ void main() {
       expect(find.text('Stats'), findsOneWidget);
     });
 
-    testWidgets('shows records and totals for seeded sightings',
-        (tester) async {
+    testWidgets('shows records and totals for seeded sightings', (
+      tester,
+    ) async {
       await _pumpApp(
         tester,
         enabled: true,
         seed: [
-          _sighting(destination: const Airport(icao: 'ESSA', iata: 'ARN')),
+          _sighting(
+            destination: const Airport(icao: 'ESSA', iata: 'ARN'),
+          ),
         ],
       );
 
@@ -352,13 +373,16 @@ void main() {
   });
 
   group('Reward feedback', () {
-    testWidgets('logging a new sighting surfaces reward snackbars',
-        (tester) async {
+    testWidgets('logging a new sighting surfaces reward snackbars', (
+      tester,
+    ) async {
       await _pumpApp(
         tester,
         enabled: true,
         service: _MatchService(
-          _candidate(destination: const Airport(icao: 'ESSA', iata: 'ARN')),
+          _candidate(
+            destination: const Airport(icao: 'ESSA', iata: 'ARN'),
+          ),
         ),
       );
 
@@ -372,13 +396,16 @@ void main() {
       expect(find.textContaining('New medal: Cadet'), findsOneWidget);
     });
 
-    testWidgets('no reward snackbar when Collector mode is off',
-        (tester) async {
+    testWidgets('no reward snackbar when Collector mode is off', (
+      tester,
+    ) async {
       await _pumpApp(
         tester,
         enabled: false,
         service: _MatchService(
-          _candidate(destination: const Airport(icao: 'ESSA', iata: 'ARN')),
+          _candidate(
+            destination: const Airport(icao: 'ESSA', iata: 'ARN'),
+          ),
         ),
       );
 
@@ -391,8 +418,9 @@ void main() {
   });
 
   group('Logbook pagination', () {
-    testWidgets('caps rows at a page and reveals more on demand',
-        (tester) async {
+    testWidgets('caps rows at a page and reveals more on demand', (
+      tester,
+    ) async {
       final store = InMemorySightingStore<Sighting>();
       for (var i = 0; i < 60; i++) {
         await store.add(_sighting(icao24: 'ac$i'));
@@ -400,18 +428,13 @@ void main() {
 
       await tester.pumpWidget(
         ProviderScope(
-          overrides: [
-            sightingStoreProvider.overrideWithValue(store),
-          ],
+          overrides: [sightingStoreProvider.overrideWithValue(store)],
           child: const MaterialApp(home: LogbookScreen()),
         ),
       );
 
       // The footer sits below the first page of rows; scroll to reach it.
-      await tester.scrollUntilVisible(
-        find.textContaining('Show more'),
-        400,
-      );
+      await tester.scrollUntilVisible(find.textContaining('Show more'), 400);
       expect(find.textContaining('Show more'), findsOneWidget);
 
       await tester.tap(find.textContaining('Show more'));
