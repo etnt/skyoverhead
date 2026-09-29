@@ -160,10 +160,9 @@ class ReleaseChecker {
    pushed to `etnt/auto_upgrade`, switch to the `git:` dependency from the
    design doc. (`url_launcher` is already a dependency — nothing else to add.)
 2. **`lib/src/data/update_service.dart`** — `releaseCheckerProvider`
-   (`Provider<ReleaseChecker>`), defaulting to `checkStore: null`; `main.dart`
-   overrides it (mirroring the three existing overrides) with a prefs-backed
-   `SharedPrefsUpdateCheckStore` and `owner: 'etnt', repo: 'skyoverhead',
-   currentVersion: appVersion`.
+   (`Provider<ReleaseChecker>`) uses `owner: 'etnt', repo: 'skyoverhead',
+   currentVersion: appVersion`, with no `checkStore`; `main.dart` relies on the
+   provider default so each app launch reaches GitHub.
 3. **`lib/src/ui/update_prompt.dart`** —
    `maybeShowUpdateDialog(context, ref, {required ReleaseChecker checker,
    required Future<void> Function(UpdateInfo) onUpdate})`:
@@ -226,8 +225,10 @@ class ReleaseChecker {
   `etnt/auto_upgrade` GitHub repo to exist and be **public** (dependency
   resolution happens at build time only, but a private repo needs auth on every
   machine/CI that builds the app).
-- **Anonymous API rate limits** — mitigated by the 24 h throttle; errors are
-  silent anyway.
+- **Anonymous API rate limits** — Sky Overhead checks on every launch, so
+  unusually frequent launches behind one IP may hit GitHub's 60/hour limit;
+  errors remain silent. The package supports optional throttling for consumers
+  that prefer fewer requests.
 - **Dialog UX timing** — showing a dialog on app start could collide with the
   first-frame UI; mitigated by the post-frame callback and the existing dialog
   patterns (`showSettingsDialog`).
@@ -239,9 +240,9 @@ class ReleaseChecker {
   `shared_prefs_store.dart` touches the plugin world).
 - A second Flutter app could consume it by adding the `git:` dependency and
   ~15 lines of wiring (documented in the package README).
-- Sky Overhead: dialog at most once per interval, only on a genuinely newer
-  release, never on error/offline/`dev`; nothing opens unless the user taps
-  **Update now**.
+- Sky Overhead checks on every app launch and shows the dialog only when a
+  genuinely newer release exists; errors stay silent and **Update now** remains
+  user-approved.
 - Full existing test suite still green.
 
 ## Follow-up (future, not this iteration)

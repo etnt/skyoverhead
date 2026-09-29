@@ -41,8 +41,8 @@ downloaded or opened until the user says yes.
 - **Play Store publishing** — separate track, documented elsewhere.
 - **Forced updates** — the update is always user-approved; there is no silent
   install and no blocking "you must update" wall in this iteration.
-- **Automatic background polling** — the check runs on app start only
-  (throttled); no push notifications or workmanager scheduling.
+- **Automatic background polling** — the check runs once on each app start;
+  no push notifications or workmanager scheduling.
 
 ## Current state (verified)
 
@@ -238,7 +238,7 @@ final releaseCheckerProvider = Provider<ReleaseChecker>((ref) {
     owner: 'etnt',
     repo: 'skyoverhead',
     currentVersion: appVersion, // 'dev' in debug builds -> checks skipped
-    checkStore: SharedPrefsUpdateCheckStore(prefs),
+    // No checkStore: query GitHub on every app start.
   );
 });
 ```
@@ -251,11 +251,8 @@ On app start, the home screen fires the check; when the result is
 > **Update available** — Version 1.2.0 is available (you have 1.0.1).
 > [Later]  [Update now]
 
-- **Update now** → runs the configured strategy (Option A: `url_launcher`
-  opens `https://github.com/etnt/skyoverhead/releases/latest`; Option B:
-  `ApkInstaller.downloadAndInstall`).
-- **Later** → dismisses; the throttle means the user is not asked again for
-  the configured interval.
+- **Later** → dismisses this dialog; the next app start checks again and may
+  show it again while the newer release is still available.
 - Any other result (`UpToDate`, `CheckError`) shows nothing.
 
 ### Package dependency
@@ -289,11 +286,10 @@ own dependency footprint small for Option-A-only consumers.
     without any install call; "Update now" invokes the chosen strategy
     (faked); `UpToDate`/`CheckError` show nothing.
 
-## Risks & considerations
-
-- **API rate limits** — mitigated by throttling (one request per install per
-  day by default). Even a large number of installs stays far below the
-  anonymous limit.
+- **API rate limits** — Sky Overhead makes one unauthenticated GitHub API
+  request per app start. GitHub's anonymous limit is 60 requests per hour per
+  IP; frequent launches behind a shared IP can be rate-limited. Errors stay
+  silent, and the package still supports throttling for other consumers.
 - **Unknown-sources friction** (Option B) — sideloaded installs already
   require "install unknown apps" for the browser; the system installer will
   additionally prompt for the app itself on first update. This is Android's
@@ -310,11 +306,11 @@ own dependency footprint small for Option-A-only consumers.
 
 ## Acceptance criteria
 
-- The `auto_upgrade` package builds standalone, its pure-Dart tests pass, and
-  it is consumable from any app via a `git:` dependency.
-- Sky Overhead shows the update dialog at most once per throttle interval,
-  only when a genuinely newer release exists, and never when offline, when
-  rate-limited, or in `dev` builds.
+- The `auto_upgrade` package remains reusable and supports optional persistent
+  throttling for consumers that need to reduce requests.
+- Sky Overhead checks once per app start and shows the update dialog only when
+  a genuinely newer release exists; offline, rate-limited, and `dev` checks
+  stay silent.
 - Nothing is downloaded or opened unless the user taps **Update now**.
 - (Option B) On a physical Android device, approving the dialog downloads the
   universal APK and presents Android's installer; the new version installs

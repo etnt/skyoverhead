@@ -1,10 +1,7 @@
 /// Riverpod wiring for the GitHub Releases update check (Option A).
 ///
-/// [releaseCheckerProvider] defaults to a checker with no throttling store,
-/// so an app that is never overridden checks on every launch. `main()`
-/// overrides it — mirroring the other store providers — with a
-/// `SharedPrefsUpdateCheckStore`-backed checker so the network call happens at
-/// most once per interval. In `dev` builds (`appVersion == 'dev'`) the check
+/// [releaseCheckerProvider] has no persistent throttle, so each app launch
+/// checks GitHub once. In `dev` builds (`appVersion == 'dev'`) the check
 /// short-circuits without any HTTP.
 library;
 

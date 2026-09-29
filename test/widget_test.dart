@@ -1,9 +1,11 @@
+import 'package:auto_upgrade/auto_upgrade.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:skyoverhead/src/config/identify_config.dart';
 import 'package:skyoverhead/src/data/aircraft_service.dart';
 import 'package:skyoverhead/src/data/errors.dart';
+import 'package:skyoverhead/src/data/update_service.dart';
 import 'package:skyoverhead/src/domain/models.dart';
 import 'package:skyoverhead/src/state/identify_controller.dart';
 import 'package:skyoverhead/src/ui/home_screen.dart';
@@ -38,10 +40,26 @@ Candidate _candidate() => const Candidate(
   enrichmentStatus: EnrichmentStatus.ok,
 );
 
-Widget _app(IdentifyResult result) {
+class _FakeReleaseChecker extends ReleaseChecker {
+  final UpdateCheckResult result;
+  int calls = 0;
+
+  _FakeReleaseChecker(this.result)
+    : super(owner: 'etnt', repo: 'skyoverhead', currentVersion: '1.0.0');
+
+  @override
+  Future<UpdateCheckResult> check() async {
+    calls++;
+    return result;
+  }
+}
+
+Widget _app(IdentifyResult result, {ReleaseChecker? releaseChecker}) {
   return ProviderScope(
     overrides: [
       aircraftServiceProvider.overrideWithValue(_FakeService(result)),
+      if (releaseChecker != null)
+        releaseCheckerProvider.overrideWithValue(releaseChecker),
     ],
     child: const MaterialApp(home: HomeScreen()),
   );
@@ -53,6 +71,33 @@ void main() {
 
     expect(find.text("What's overhead?"), findsOneWidget);
     expect(find.text('Point at the sky'), findsOneWidget);
+  });
+
+  testWidgets('checks for and shows a release update on startup', (
+    tester,
+  ) async {
+    final checker = _FakeReleaseChecker(
+      UpdateAvailable(
+        const UpdateInfo(
+          latestVersion: '1.2.0',
+          currentVersion: '1.0.0',
+          releasePageUrl:
+              'https://github.com/etnt/skyoverhead/releases/tag/v1.2.0',
+        ),
+      ),
+    );
+
+    await tester.pumpWidget(
+      _app(
+        IdentifyResult.none(observedAt: _observedAt),
+        releaseChecker: checker,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(checker.calls, 1);
+    expect(find.text('Update available'), findsOneWidget);
+    expect(find.textContaining('1.2.0 is available'), findsOneWidget);
   });
 
   testWidgets('tap surfaces the result card for a match', (tester) async {
