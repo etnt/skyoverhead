@@ -2,3 +2,6 @@ name = "skyoverhead-api-proxy"
 main = "src/index.js"
 workers_dev = true
 compatibility_date = "2026-09-30"
+
+[vars]
+PAGES_ORIGIN = "https://etnt.github.io"

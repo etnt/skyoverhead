@@ -51,17 +51,14 @@ Open repository `Settings`. Select `Secrets and variables`, then `Actions`.
 Add `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` as GitHub
 repository secrets. Set them to the token and account ID from step 2.
 
-Repository variables are optional. The workflow defaults `PAGES_ORIGIN` to
-`https://etnt.github.io` and `WEB_API_PROXY_URL` to
-`https://skyoverhead-api-proxy.kruskakli.workers.dev`. Set these variables only
-to override the defaults:
+Set `PAGES_ORIGIN` in `cloudflare/opensky-proxy/wrangler.toml` to the HTTPS
+origin of the Pages site. The current value is `https://etnt.github.io`. It must
+not include a repository path or trailing slash.
 
-- `PAGES_ORIGIN`: the HTTPS origin of the Pages site, without its repository
-  path or a trailing slash (for example, `https://OWNER.github.io`). Find the
-  published site URL in repository `Settings` > `Pages`.
-- `WEB_API_PROXY_URL`: the Worker base URL, without a path or trailing slash.
-  This URL is public and appears in the built web app; do not store it as a
-  secret.
+`WEB_API_PROXY_URL` is an optional GitHub repository variable. Its default is
+`https://skyoverhead-api-proxy.kruskakli.workers.dev`. Set the variable only to
+override this Worker address. The value is public and appears in the built web
+app. Do not store it as a secret.
 
 ## 4. Enable GitHub Pages deployment
 
@@ -72,13 +69,13 @@ to override the defaults:
 4. Run the web deployment workflow from the repository's default branch.
 
 The workflow deploys the Worker, builds Flutter Web with the repository path,
-and publishes `build/web`. It sends `PAGES_ORIGIN` to the Worker. The Worker
-uses this value to allow requests from the published app.
+and publishes `build/web`. The Worker reads `PAGES_ORIGIN` from its Wrangler
+configuration and allows requests from that site.
 
 ## 5. Test the proxy
 
-Set the shell variables to match your GitHub Actions variables, or use the
-defaults:
+Set the shell variables to match the Wrangler origin and the Worker URL, or
+use these defaults:
 
 ```sh
 export PAGES_ORIGIN="https://etnt.github.io"

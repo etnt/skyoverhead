@@ -65,7 +65,7 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: cloudflare/opensky-proxy
-          command: deploy --var PAGES_ORIGIN:${{ vars.PAGES_ORIGIN || 'https://etnt.github.io' }}
+          command: deploy
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
