@@ -187,8 +187,10 @@ GPS permission returns a position, and manual coordinates still work. Enable
 Collector mode, save a sighting and location, reload the page, and confirm the
 saved data remains. Install the PWA from Chrome and confirm it opens in
 standalone mode. On iOS Safari, add the page to the home screen and confirm that
-it opens as a standalone web app.
-
+it opens as a standalone web app. If a browser reports CORS errors, inspect the
+request status and response body. A network-filter block page or DNS failure is
+not a Worker CORS response. Test on a network that allows the Worker before
+changing CORS rules.
 TASK-012 details: Install the debug APK on an Android device or emulator.
 Confirm GPS still uses the Android location manager, identification requests go
 directly to OpenSky and ADSBDB, manual coordinates work, and Collector data
@@ -260,6 +262,10 @@ merging the production deployment.
   has no cloud backup in this plan.
 - **RISK-003**: An incorrect `ALLOWED_ORIGIN` or Worker URL override causes
   browser CORS failures. The origin is fixed in Worker source.
+- **RISK-004**: Corporate DNS or web filters can block the public `workers.dev`
+  host. Browsers report these blocks as CORS errors even when the Worker sends
+  correct CORS headers. Test from mobile data or ask the network admin to allow
+  the Worker host.
 - **ASSUMPTION-001**: GitHub Pages project hosting is the production target,
   and its site uses HTTPS.
 - **ASSUMPTION-002**: Current `geolocator`, `shared_preferences`,
