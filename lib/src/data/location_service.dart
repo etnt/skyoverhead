@@ -2,8 +2,7 @@
 /// never touch the plugin directly.
 library;
 
-import 'dart:io' show Platform;
-
+import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
 
 /// Why a location request could not be fulfilled.
@@ -109,7 +108,7 @@ class GeolocatorLocationService implements LocationService {
   LocationSettings _locationSettings() {
     const accuracy = LocationAccuracy.medium;
     const timeLimit = Duration(seconds: 15);
-    if (Platform.isAndroid) {
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
       return AndroidSettings(
         accuracy: accuracy,
         timeLimit: timeLimit,

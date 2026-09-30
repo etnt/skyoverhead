@@ -8,49 +8,41 @@ Resource Sharing (CORS) is a browser rule that controls which websites can
 read a server response. The Sky Overhead Worker forwards requests to fixed
 OpenSky and ADSBDB endpoints and adds CORS response headers.
 
-The Worker source and deployment workflow are planned at
-`cloudflare/opensky-proxy/` and `.github/workflows/deploy-web.yml`. Complete the
-steps below after those files exist.
+The Worker code and deployment workflow are in `cloudflare/opensky-proxy/` and
+`.github/workflows/deploy-web.yml`. The named Worker has already been created;
+the first workflow deployment replaces its code with this repository's proxy.
 
-## 1. Create the Worker
+## 1. Confirm the existing Worker
 
-You need a Cloudflare account. If you do not have one, [create one][account].
-Create the Worker before its deployment token. This lets you limit the token
-to this Worker.
+You need access to the Cloudflare account that owns the Worker. If needed,
+[create a Cloudflare account][account].
 
-1. Open [Cloudflare Workers & Pages](https://dash.cloudflare.com/).
-2. Select `Create application`. Create a basic Worker named
-   `skyoverhead-api-proxy`.
-3. Enable its `workers.dev` address and deploy it.
-4. Find your account's `workers.dev` subdomain in Workers & Pages.
+1. Open the [Cloudflare dashboard](https://dash.cloudflare.com/). Select
+   `Workers & Pages` under `Compute`.
+2. Confirm the existing Worker is named `skyoverhead-api-proxy` and its
+   `workers.dev` address is enabled.
 
-The Worker address has this form:
+The Worker URL is:
 
 ```text
-https://skyoverhead-api-proxy.ACCOUNT_SUBDOMAIN.workers.dev
+https://skyoverhead-api-proxy.kruskakli.workers.dev
 ```
 
-Replace `ACCOUNT_SUBDOMAIN` with the subdomain shown in Cloudflare. If the
-subdomain is `skyuser`, the address is
-`https://skyoverhead-api-proxy.skyuser.workers.dev`.
-
-The first GitHub Actions deployment replaces the basic Worker code with the
-proxy code in this repository.
+The workflow deploys this repository's proxy code to that Worker.
 
 ## 2. Create a deployment token
 
 The token lets GitHub Actions deploy the Worker. It is not an API key for
 OpenSky or ADSBDB.
 
-1. Find the Cloudflare account ID in the Cloudflare dashboard.
+1. Find the Cloudflare account ID in the dashboard.
 2. Open `Manage Account`, then `API Tokens`.
 3. Create an account API token with the `Workers Editor` role.
-4. Limit the role to `skyoverhead-api-proxy` only.
-5. Copy the token when Cloudflare shows it. Cloudflare shows it only once.
+4. Restrict the token to the `skyoverhead-api-proxy` Worker.
+5. Copy the token when Cloudflare shows it. It is shown only once.
 
-The Worker must exist before you can limit the token to it. The
-`Workers Editor` role can deploy and update that Worker. It cannot create or
-delete Workers.
+The Worker already exists, so the `Workers Editor` role can deploy and update
+it. This role cannot create or delete Workers.
 
 ## 3. Add GitHub Actions values
 
@@ -59,23 +51,24 @@ Open repository `Settings`. Select `Secrets and variables`, then `Actions`.
 Add `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` as GitHub
 repository secrets. Set them to the token and account ID from step 2.
 
-Add `PAGES_ORIGIN` and `WEB_API_PROXY_URL` as repository variables.
+Repository variables are optional. The workflow defaults `PAGES_ORIGIN` to
+`https://etnt.github.io` and `WEB_API_PROXY_URL` to
+`https://skyoverhead-api-proxy.kruskakli.workers.dev`. Set these variables only
+to override the defaults:
 
-Set `PAGES_ORIGIN` to the HTTPS origin of the Pages site. Do not include the
-repository path. For a project Pages site, the value looks like
-`https://OWNER.github.io`. Do not add a trailing slash. Find the published
-site URL in repository `Settings`, under `Pages`.
-
-Set `WEB_API_PROXY_URL` to the Worker address from step 1. Do not add a path or
-trailing slash. This value is public and appears in the built web app. Do not
-store it as a secret.
+- `PAGES_ORIGIN`: the HTTPS origin of the Pages site, without its repository
+  path or a trailing slash (for example, `https://OWNER.github.io`). Find the
+  published site URL in repository `Settings` > `Pages`.
+- `WEB_API_PROXY_URL`: the Worker base URL, without a path or trailing slash.
+  This URL is public and appears in the built web app; do not store it as a
+  secret.
 
 ## 4. Enable GitHub Pages deployment
 
-1. In the repository settings, open `Pages`.
+1. In repository settings, open `Pages`.
 2. Set the publishing source to `GitHub Actions`.
-3. Make sure that both repository variables and both repository secrets are
-   set.
+3. Add the `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` repository
+   secrets described above.
 4. Run the web deployment workflow from the repository's default branch.
 
 The workflow deploys the Worker, builds Flutter Web with the repository path,
@@ -84,14 +77,12 @@ uses this value to allow requests from the published app.
 
 ## 5. Test the proxy
 
-Set the shell variables to match the GitHub repository variables. Replace
-`OWNER` and `ACCOUNT_SUBDOMAIN` with your values:
+Set the shell variables to match your GitHub Actions variables, or use the
+defaults:
 
 ```sh
-export PAGES_ORIGIN="https://OWNER.github.io"
-export WORKER_SUBDOMAIN="ACCOUNT_SUBDOMAIN"
-export WORKER_HOST="skyoverhead-api-proxy.${WORKER_SUBDOMAIN}.workers.dev"
-export WEB_API_PROXY_URL="https://${WORKER_HOST}"
+export PAGES_ORIGIN="https://etnt.github.io"
+export WEB_API_PROXY_URL="https://skyoverhead-api-proxy.kruskakli.workers.dev"
 ```
 
 Send a browser preflight request:

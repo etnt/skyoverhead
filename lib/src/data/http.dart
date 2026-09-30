@@ -7,9 +7,13 @@
 library;
 
 import 'dart:async';
-import 'dart:io';
 
 import 'package:http/http.dart' as http;
+
+import 'transport_error_classifier.dart' as error_classifier;
+import 'transport_exception.dart';
+
+export 'transport_exception.dart';
 
 /// A minimal HTTP response: status, lower-cased headers, and body text.
 class HttpResponse {
@@ -18,27 +22,6 @@ class HttpResponse {
   final String body;
 
   const HttpResponse(this.status, this.headers, this.body);
-}
-
-/// How a transport-level failure was classified.
-enum TransportErrorKind {
-  timeout,
-  connectionFailed,
-  dnsFailed,
-  tlsFailed,
-  tooLarge,
-  other,
-}
-
-/// Raised for transport-level failures (no HTTP status was obtained).
-class TransportException implements Exception {
-  final TransportErrorKind kind;
-  final Object? cause;
-
-  const TransportException(this.kind, [this.cause]);
-
-  @override
-  String toString() => 'TransportException(${kind.name})';
 }
 
 /// Injectable HTTP transport abstraction.
@@ -56,7 +39,7 @@ class DefaultHttpTransport implements HttpTransport {
   final http.Client _client;
 
   DefaultHttpTransport({http.Client? client})
-      : _client = client ?? http.Client();
+    : _client = client ?? http.Client();
 
   @override
   Future<HttpResponse> get(
@@ -66,7 +49,9 @@ class DefaultHttpTransport implements HttpTransport {
     int maxBody = 262144,
   }) async {
     try {
-      final response = await _client.get(url, headers: headers).timeout(timeout);
+      final response = await _client
+          .get(url, headers: headers)
+          .timeout(timeout);
       if (response.bodyBytes.length > maxBody) {
         throw const TransportException(TransportErrorKind.tooLarge);
       }
@@ -79,19 +64,8 @@ class DefaultHttpTransport implements HttpTransport {
       rethrow;
     } on TimeoutException catch (e) {
       throw TransportException(TransportErrorKind.timeout, e);
-    } on HandshakeException catch (e) {
-      throw TransportException(TransportErrorKind.tlsFailed, e);
-    } on TlsException catch (e) {
-      throw TransportException(TransportErrorKind.tlsFailed, e);
-    } on SocketException catch (e) {
-      final kind = e.message.toLowerCase().contains('failed host lookup')
-          ? TransportErrorKind.dnsFailed
-          : TransportErrorKind.connectionFailed;
-      throw TransportException(kind, e);
-    } on http.ClientException catch (e) {
-      throw TransportException(TransportErrorKind.connectionFailed, e);
     } catch (e) {
-      throw TransportException(TransportErrorKind.other, e);
+      throw error_classifier.classifyTransportError(e);
     }
   }
 

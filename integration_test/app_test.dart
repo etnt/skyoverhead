@@ -114,7 +114,8 @@ void main() {
     // The enriched result card is shown.
     expect(find.text('DLH804'), findsOneWidget);
     expect(find.text('Lufthansa'), findsOneWidget);
-    expect(find.text('FRA → ARN'), findsOneWidget);
+    expect(find.textContaining('Frankfurt'), findsOneWidget);
+    expect(find.textContaining('Arlanda'), findsOneWidget);
     expect(find.byIcon(Icons.flight_takeoff), findsOneWidget);
   });
 }

@@ -7,7 +7,10 @@
 /// finds nothing overhead returns an `ok` result with `confidence == none`.
 library;
 
+import 'package:flutter/foundation.dart';
+
 import '../config/identify_config.dart';
+import '../config/web_config.dart';
 import '../domain/models.dart';
 import '../domain/ranking.dart' as ranking;
 import '../domain/route_check.dart' as route_check;
@@ -15,6 +18,7 @@ import 'adsbdb_client.dart';
 import 'errors.dart';
 import 'http.dart';
 import 'opensky_client.dart';
+import 'web_proxy_transport.dart';
 
 class AircraftService {
   final OpenSkyClient _opensky;
@@ -25,16 +29,28 @@ class AircraftService {
     required OpenSkyClient opensky,
     required AdsbdbClient adsbdb,
     DateTime Function()? clock,
-  })  : _opensky = opensky, // ignore: prefer_initializing_formals
-        _adsbdb = adsbdb, // ignore: prefer_initializing_formals
-        _clock = clock ?? DateTime.now;
+  }) : _opensky = opensky, // ignore: prefer_initializing_formals
+       _adsbdb = adsbdb, // ignore: prefer_initializing_formals
+       _clock = clock ?? DateTime.now;
 
   /// Build a service backed by the real network transport.
+  ///
+  /// Web API requests use the configured CORS proxy. Native requests stay
+  /// direct to their provider hosts.
   factory AircraftService.networked([HttpTransport? transport]) {
-    final http = transport ?? DefaultHttpTransport();
+    HttpTransport apiTransport = transport ?? DefaultHttpTransport();
+    if (kIsWeb) {
+      final proxyBaseUri = webApiProxyBaseUri;
+      if (proxyBaseUri != null) {
+        apiTransport = WebProxyTransport(
+          apiTransport,
+          proxyBaseUri: proxyBaseUri,
+        );
+      }
+    }
     return AircraftService(
-      opensky: OpenSkyClient(http),
-      adsbdb: AdsbdbClient(http),
+      opensky: OpenSkyClient(apiTransport),
+      adsbdb: AdsbdbClient(apiTransport),
     );
   }
 

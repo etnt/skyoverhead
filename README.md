@@ -14,6 +14,23 @@ the best match enriched with route and registration details.
 <a href="screenshots/stats1.jpeg"><img src="screenshots/stats1.jpeg" alt="Stats 1 screenshot" width="19%"></a>
 <a href="screenshots/stats2.jpeg"><img src="screenshots/stats2.jpeg" alt="Stats 2 screenshot" width="19%"></a>
 
+## Web app (PWA)
+
+After the Pages workflow deploys the app, open
+`https://etnt.github.io/skyoverhead/` over HTTPS. In Chrome, choose
+**Install app** (or **Add to Home screen**) from the
+browser menu. On iPhone or iPad, open the site in Safari, tap **Share**, then
+**Add to Home Screen**. The installed app opens in standalone mode.
+
+Browser location access requires HTTPS and your permission. If GPS is denied or
+unavailable, use **Enter location** to set coordinates manually. Collector data
+is stored in this browser's local storage; the browser or user can clear it, and
+it does not sync with Android or other devices. The web app needs an internet
+connection and does not provide offline API access.
+
+For GitHub Pages and Cloudflare Worker deployment setup, see the
+[Cloudflare Worker setup guide](docs/cloudflare-worker-setup.md).
+
 ## Download & install (Android)
 
 Prebuilt Android APKs are published on the repository's

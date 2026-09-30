@@ -4,7 +4,7 @@ version: 1.0
 date_created: 2026-09-30
 last_updated: 2026-09-30
 owner: Sky Overhead maintainers
-status: Planned
+status: In progress
 tags:
   - feature
   - flutter
@@ -14,7 +14,7 @@ tags:
 
 # Introduction
 
-![Status: Planned](https://img.shields.io/badge/status-Planned-blue)
+![Status: In progress](https://img.shields.io/badge/status-In%20progress-yellow)
 
 This plan adds a production PWA for Sky Overhead. The app will run on Flutter
 Web, support installation from supported browsers, use HTTPS GPS, preserve
@@ -38,9 +38,9 @@ API requests.
   fixed OpenSky and ADSBDB endpoints. It must not accept arbitrary target URLs.
 - **CON-001**: Use GitHub Pages project-site paths. Build Flutter Web with the
   repository path as `--base-href`.
-- **CON-002**: Configure the production Pages origin and Worker URL as GitHub
-  Actions repository variables. Store the Cloudflare token and account ID as
-  GitHub Actions secrets.
+- **CON-002**: Default to `https://etnt.github.io` and the supplied Worker URL.
+  Allow GitHub Actions variables to override either value. Store the Cloudflare
+  token and account ID as GitHub Actions secrets.
 - **CON-003**: Remove web-incompatible `dart:io` imports from shared Flutter
   code. Preserve native TLS, DNS, and connection error classification.
 - **GUD-001**: Reuse current packages and architecture. Add no Flutter package
@@ -59,9 +59,9 @@ API requests.
 
 | Task | Description | Completed | Date |
 |------|-------------|-----------|------|
-| TASK-001 | Make `http.dart` web-safe; keep native error mapping. | | |
-| TASK-002 | Use web-safe platform checks in `location_service.dart`. | | |
-| TASK-003 | Build web and Android; fix shared web blockers. | | |
+| TASK-001 | Web-safe transport and native error mapping. | ✅ | 2026-09-30 |
+| TASK-002 | Use web-safe location platform checks. | ✅ | 2026-09-30 |
+| TASK-003 | Build web and Android targets. | ✅ | 2026-09-30 |
 
 TASK-001 details: Move `TransportErrorKind` and `TransportException` into
 `lib/src/data/transport_exception.dart`, and re-export them from
@@ -93,14 +93,15 @@ behavior or replacing existing services.
 
 | Task | Description | Completed | Date |
 |------|-------------|-----------|------|
-| TASK-004 | Add a Worker for fixed OpenSky and ADSBDB routes. | | |
-| TASK-005 | Add a web-only proxy transport and Worker URL. | | |
-| TASK-006 | Test Worker routes and verify native clients remain direct. | | |
+| TASK-004 | Add restricted OpenSky and ADSBDB Worker. | ✅ | 2026-09-30 |
+| TASK-005 | Route browser API requests through Worker. | ✅ | 2026-09-30 |
+| TASK-006 | Test routes and preserve native requests. | ✅ | 2026-09-30 |
 
 TASK-004 details: Add `cloudflare/opensky-proxy/wrangler.toml`,
 `cloudflare/opensky-proxy/src/index.js`,
 `cloudflare/opensky-proxy/test/index.test.js`, and
-`cloudflare/opensky-proxy/package.json` with an `npm test` command. Map
+`cloudflare/opensky-proxy/package.json` with an `npm test` command. Set the
+Worker name to `skyoverhead-api-proxy` and enable `workers_dev`. Map
 `/opensky/api/states/all` only to `opensky-network.org`, and
 `/adsbdb/v0/aircraft/{icao24}` only to `api.adsbdb.com`. Require six
 hexadecimal characters for `{icao24}` and allow only the optional `callsign`
@@ -133,9 +134,9 @@ current upstream URLs. Run the existing client and service tests.
 
 | Task | Description | Completed | Date |
 |------|-------------|-----------|------|
-| TASK-007 | Set PWA branding and install metadata. | | |
-| TASK-008 | Add GitHub Actions deployment for the Worker and Pages site. | | |
-| TASK-009 | Document PWA use, GPS, and storage in `README.md`. | | |
+| TASK-007 | Set PWA branding and install metadata. | ✅ | 2026-09-30 |
+| TASK-008 | Add Worker and Pages deployment workflow. | ✅ | 2026-09-30 |
+| TASK-009 | Document web setup and browser behavior. | ✅ | 2026-09-30 |
 
 TASK-007 details: Update `web/index.html` and `web/manifest.json` to replace
 Flutter template titles and descriptions with Sky Overhead metadata. Keep
@@ -147,17 +148,19 @@ Apple touch icon. Keep the manifest start URL and Flutter base URL compatible
 with the GitHub Pages project path.
 
 TASK-008 details: Add `.github/workflows/deploy-web.yml` with `push` and
-`workflow_dispatch` triggers. Deploy on a push only when
-`github.ref_name == github.event.repository.default_branch`. Deploy the Worker
-from `cloudflare/opensky-proxy` with Cloudflare secrets, and pass
-`vars.PAGES_ORIGIN` as the Worker `PAGES_ORIGIN` variable. Then build Flutter
-Web with `--base-href "/${{ github.event.repository.name }}/"` and
-`--dart-define=WEB_API_PROXY_BASE_URL=${{ vars.WEB_API_PROXY_URL }}`. Fail the
-build if `vars.WEB_API_PROXY_URL` or `vars.PAGES_ORIGIN` is empty. Deploy
-`build/web` with the GitHub Pages Actions workflow. Do not expose Cloudflare
-secrets to pull-request builds.
+`workflow_dispatch` triggers. Deploy on pushes to the default branch. Use
+`cloudflare/wrangler-action@v4` to update the existing Worker from
+`cloudflare/opensky-proxy`. Set `apiToken` and `accountId` from GitHub secrets.
+Pass `PAGES_ORIGIN` to Wrangler, using `vars.PAGES_ORIGIN` or the default
+`https://etnt.github.io`. Build Flutter Web with the repository path as
+`--base-href`. Set `WEB_API_PROXY_URL` from the matching repository variable or
+the supplied Worker URL. Pass it as
+`--dart-define=WEB_API_PROXY_BASE_URL=${WEB_API_PROXY_URL}`. Deploy `build/web`
+with GitHub Pages Actions. Do not expose Cloudflare secrets to pull requests.
 
-TASK-009 details: Update `README.md` with the GitHub Pages URL pattern, PWA
+TASK-009 details: Add `docs/cloudflare-worker-setup.md` with Cloudflare
+account, Worker, token, Pages origin, and repository variable setup. Update
+`README.md` with a link to the guide, the GitHub Pages URL pattern, PWA
 installation steps for Chrome and iOS Safari, HTTPS GPS permission requirements,
 manual coordinate fallback, Collector persistence, and the risk of browser data
 removal. State that the app requires a network connection and does not provide
@@ -170,7 +173,7 @@ offline API access.
 
 | Task | Description | Completed | Date |
 |------|-------------|-----------|------|
-| TASK-010 | Run CI analysis, tests, and both platform builds. | | |
+| TASK-010 | Run analysis, tests, and platform builds. | ✅ | 2026-09-30 |
 | TASK-011 | Smoke-test the deployed PWA in Chrome and iOS Safari. | | |
 | TASK-012 | Smoke-test Android GPS, APIs, and Collector behavior. | | |
 
@@ -206,10 +209,11 @@ merging the production deployment.
 ## 4. Dependencies
 
 - **DEP-001**: Flutter stable SDK and current dependencies in `pubspec.yaml`.
-- **DEP-002**: A Cloudflare account, `CLOUDFLARE_API_TOKEN`, and
-  `CLOUDFLARE_ACCOUNT_ID` for Worker deployment.
-- **DEP-003**: GitHub repository variables `PAGES_ORIGIN` and
-  `WEB_API_PROXY_URL`, plus Pages configured to deploy with GitHub Actions.
+- **DEP-002**: Existing Worker at
+  `https://skyoverhead-api-proxy.kruskakli.workers.dev`. Add a per-Worker
+  `Workers Editor` API token and `CLOUDFLARE_ACCOUNT_ID` as GitHub secrets.
+- **DEP-003**: GitHub Pages configured for GitHub Actions. Repository variables
+  `PAGES_ORIGIN` and `WEB_API_PROXY_URL` are optional overrides.
 - **DEP-004**: HTTPS from GitHub Pages for browser GPS and PWA installation.
 
 ## 5. Files
@@ -229,8 +233,11 @@ merging the production deployment.
 - **FILE-006**: `.github/workflows/deploy-web.yml`. Deploy the Worker and Pages
   app without changing Android release workflow behavior.
 - **FILE-007**: `README.md`. Document PWA use and browser limitations.
-- **FILE-008**: `test/web_proxy_transport_test.dart` and new HTTP classifier
-  tests. Preserve current client and service tests.
+- **FILE-008**: `test/web_proxy_transport_test.dart`,
+  `test/transport_error_classifier_test.dart`, and
+  `integration_test/app_test.dart`. Test proxy routing and airport data.
+- **FILE-009**: `docs/cloudflare-worker-setup.md`. Describe Worker setup,
+  token scope, GitHub variables, deployment, and CORS checks.
 
 ## 6. Testing
 
@@ -252,8 +259,8 @@ merging the production deployment.
   outages. It adds another service that can fail.
 - **RISK-002**: Browsers can remove local `shared_preferences` data. The PWA
   has no cloud backup in this plan.
-- **RISK-003**: A wrong Pages origin or Worker URL causes browser CORS failures.
-  The deployment workflow must reject missing configuration.
+- **RISK-003**: Incorrect origin or Worker overrides cause browser CORS errors.
+  The workflow defaults to the repository's current Pages and Worker origins.
 - **ASSUMPTION-001**: GitHub Pages project hosting is the production target,
   and its site uses HTTPS.
 - **ASSUMPTION-002**: Current `geolocator`, `shared_preferences`,
@@ -264,5 +271,6 @@ merging the production deployment.
 
 - [Web app research](../docs/web-app-research.md)
 - [Project README](../README.md)
+- [Cloudflare Worker setup guide](../docs/cloudflare-worker-setup.md)
 - [Flutter Web deployment](https://docs.flutter.dev/deployment/web)
 - [Cloudflare Workers documentation](https://developers.cloudflare.com/workers/)
