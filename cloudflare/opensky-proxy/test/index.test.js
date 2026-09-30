@@ -3,7 +3,6 @@ import test, { afterEach } from "node:test";
 import worker from "../src/index.js";
 
 const pagesOrigin = "https://etnt.github.io";
-const env = { PAGES_ORIGIN: pagesOrigin };
 const originalFetch = globalThis.fetch;
 
 afterEach(() => {
@@ -26,7 +25,6 @@ test("forwards OpenSky requests and preserves every query parameter", async () =
 
   const response = await worker.fetch(
     request("/opensky/api/states/all?lamin=51.2&lamax=53.4&time=123&icao24=abc123"),
-    env,
   );
 
   assert.equal(
@@ -49,7 +47,6 @@ test("forwards ADSBDB aircraft lookups with the optional callsign", async () => 
 
   const response = await worker.fetch(
     request("/adsbdb/v0/aircraft/a1b2c3?callsign=TEST%201"),
-    env,
   );
 
   assert.equal(
@@ -71,7 +68,6 @@ test("answers a valid CORS preflight without contacting upstream", async () => {
         "Access-Control-Request-Method": "GET",
       },
     }),
-    env,
   );
 
   assert.equal(response.status, 204);
@@ -88,7 +84,6 @@ test("rejects preflight requests for unsupported methods", async () => {
         "Access-Control-Request-Method": "POST",
       },
     }),
-    env,
   );
 
   assert.equal(response.status, 405);
@@ -100,7 +95,6 @@ test("rejects origins other than the configured Pages origin", async () => {
 
   const response = await worker.fetch(
     request("/opensky/api/states/all", { origin: "https://attacker.example" }),
-    env,
   );
 
   assert.equal(response.status, 403);
@@ -109,7 +103,9 @@ test("rejects origins other than the configured Pages origin", async () => {
 });
 
 test("rejects missing origins", async () => {
-  const response = await worker.fetch(request("/opensky/api/states/all", { origin: null }), env);
+  const response = await worker.fetch(
+    request("/opensky/api/states/all", { origin: null }),
+  );
 
   assert.equal(response.status, 403);
   assert.equal(response.headers.get("Access-Control-Allow-Origin"), null);
@@ -119,7 +115,7 @@ test("rejects unsupported routes and methods", async (t) => {
   globalThis.fetch = () => assert.fail("invalid requests must not reach upstream");
 
   await t.test("unknown route", async () => {
-    const response = await worker.fetch(request("/proxy?url=https://example.com"), env);
+    const response = await worker.fetch(request("/proxy?url=https://example.com"));
     assert.equal(response.status, 404);
     assert.equal(response.headers.get("Access-Control-Allow-Origin"), pagesOrigin);
   });
@@ -127,7 +123,6 @@ test("rejects unsupported routes and methods", async (t) => {
   await t.test("unsupported method", async () => {
     const response = await worker.fetch(
       request("/opensky/api/states/all", { method: "POST" }),
-      env,
     );
     assert.equal(response.status, 405);
     assert.deepEqual(await response.json(), { error: "method_not_allowed" });
@@ -144,7 +139,7 @@ test("rejects invalid ADSBDB aircraft IDs and unapproved query parameters", asyn
     "/adsbdb/v0/aircraft/abcdef?callsign=A&callsign=B",
   ]) {
     await t.test(path, async () => {
-      const response = await worker.fetch(request(path), env);
+      const response = await worker.fetch(request(path));
       assert.equal(response.status, 404);
       assert.deepEqual(await response.json(), { error: "route_not_allowed" });
     });
@@ -156,7 +151,7 @@ test("returns an explicit CORS-safe 502 when upstream fetch fails", async () => 
     throw new Error("network failure");
   };
 
-  const response = await worker.fetch(request("/opensky/api/states/all"), env);
+  const response = await worker.fetch(request("/opensky/api/states/all"));
 
   assert.equal(response.status, 502);
   assert.equal(response.headers.get("Access-Control-Allow-Origin"), pagesOrigin);
@@ -174,7 +169,7 @@ test("preserves non-JSON upstream statuses and retry headers", async () => {
       },
     });
 
-  const response = await worker.fetch(request("/opensky/api/states/all"), env);
+  const response = await worker.fetch(request("/opensky/api/states/all"));
 
   assert.equal(response.status, 429);
   assert.equal(response.headers.get("Content-Type"), "text/plain");

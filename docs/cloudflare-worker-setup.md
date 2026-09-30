@@ -51,9 +51,9 @@ Open repository `Settings`. Select `Secrets and variables`, then `Actions`.
 Add `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` as GitHub
 repository secrets. Set them to the token and account ID from step 2.
 
-Set `PAGES_ORIGIN` in `cloudflare/opensky-proxy/wrangler.toml` to the HTTPS
-origin of the Pages site. The current value is `https://etnt.github.io`. It must
-not include a repository path or trailing slash.
+The Worker allows the origin set by `ALLOWED_ORIGIN` in
+`cloudflare/opensky-proxy/src/index.js`. The value is
+`https://etnt.github.io`. Do not add the repository path or a trailing slash.
 
 `WEB_API_PROXY_URL` is an optional GitHub repository variable. Its default is
 `https://skyoverhead-api-proxy.kruskakli.workers.dev`. Set the variable only to
@@ -69,13 +69,13 @@ app. Do not store it as a secret.
 4. Run the web deployment workflow from the repository's default branch.
 
 The workflow deploys the Worker, builds Flutter Web with the repository path,
-and publishes `build/web`. The Worker reads `PAGES_ORIGIN` from its Wrangler
-configuration and allows requests from that site.
+and publishes `build/web`. The Worker adds CORS headers only for the origin in
+`ALLOWED_ORIGIN`.
 
 ## 5. Test the proxy
 
-Set the shell variables to match the Wrangler origin and the Worker URL, or
-use these defaults:
+Set these shell variables to match `ALLOWED_ORIGIN` and the Worker URL, or use
+the defaults:
 
 ```sh
 export PAGES_ORIGIN="https://etnt.github.io"

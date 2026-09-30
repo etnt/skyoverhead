@@ -38,7 +38,7 @@ API requests.
   fixed OpenSky and ADSBDB endpoints. It must not accept arbitrary target URLs.
 - **CON-001**: Use GitHub Pages project-site paths. Build Flutter Web with the
   repository path as `--base-href`.
-- **CON-002**: Set `PAGES_ORIGIN` in Wrangler config to
+- **CON-002**: Set `ALLOWED_ORIGIN` in Worker source to
   `https://etnt.github.io`. Allow `WEB_API_PROXY_URL` as an optional repository
   variable. Store Cloudflare credentials as GitHub Actions secrets.
 - **CON-003**: Remove web-incompatible `dart:io` imports from shared Flutter
@@ -107,8 +107,8 @@ Worker name to `skyoverhead-api-proxy` and enable `workers_dev`. Map
 hexadecimal characters for `{icao24}` and allow only the optional `callsign`
 query parameter. Forward the request query and upstream response. Accept `GET`
 and CORS preflight `OPTIONS` requests. Return `Access-Control-Allow-Origin`
-only when the request origin matches the `PAGES_ORIGIN` Worker variable. Reject
-unknown origins, methods, and paths.
+only for `ALLOWED_ORIGIN` (`https://etnt.github.io`). Reject unknown origins,
+methods, and paths.
 
 TASK-005 details: Add `lib/src/config/web_config.dart` with the
 `WEB_API_PROXY_BASE_URL` compile-time value. Add
@@ -151,20 +151,19 @@ TASK-008 details: Add `.github/workflows/deploy-web.yml` with `push` and
 `workflow_dispatch` triggers. Deploy on pushes to the default branch. Use
 `cloudflare/wrangler-action@v4` to update the existing Worker from
 `cloudflare/opensky-proxy`. Set `apiToken` and `accountId` from GitHub secrets.
-Use `command: deploy` so Wrangler reads `PAGES_ORIGIN` from
-`cloudflare/opensky-proxy/wrangler.toml`. Build Flutter Web with the repository
-path as `--base-href`. Set `WEB_API_PROXY_URL` from the matching repository
-variable or the supplied Worker URL. Pass it as
+Use `command: deploy`; the Worker reads the allowlist from `ALLOWED_ORIGIN` in
+`cloudflare/opensky-proxy/src/index.js`. Build Flutter Web with the repository
+path as `--base-href`. Set `WEB_API_PROXY_URL` from the optional repository
+variable or `https://skyoverhead-api-proxy.kruskakli.workers.dev`. Pass it as
 `--dart-define=WEB_API_PROXY_BASE_URL=${WEB_API_PROXY_URL}`. Deploy `build/web`
 with GitHub Pages Actions. Do not expose Cloudflare secrets to pull requests.
 
-TASK-009 details: Add `docs/cloudflare-worker-setup.md` with Cloudflare
-account, Worker, token, Pages origin, and repository variable setup. Update
-`README.md` with a link to the guide, the GitHub Pages URL pattern, PWA
-installation steps for Chrome and iOS Safari, HTTPS GPS permission requirements,
-manual coordinate fallback, Collector persistence, and the risk of browser data
-removal. State that the app requires a network connection and does not provide
-offline API access.
+TASK-009 details: Add `docs/cloudflare-worker-setup.md` with Cloudflare account,
+Worker, token, allowed-origin, and repository variable setup. Update `README.md`
+with a link to the guide, the GitHub Pages URL pattern, PWA installation steps
+for Chrome and iOS Safari, HTTPS GPS permission requirements, manual coordinate
+fallback, Collector persistence, and the risk of browser data removal. State
+that the app requires a network connection and does not provide offline access.
 
 ### Implementation Phase 4: Verify the web and Android user paths
 
@@ -259,8 +258,8 @@ merging the production deployment.
   outages. It adds another service that can fail.
 - **RISK-002**: Browsers can remove local `shared_preferences` data. The PWA
   has no cloud backup in this plan.
-- **RISK-003**: An incorrect Wrangler origin or Worker URL override causes
-  browser CORS failures. The Worker uses the origin in its Wrangler config.
+- **RISK-003**: An incorrect `ALLOWED_ORIGIN` or Worker URL override causes
+  browser CORS failures. The origin is fixed in Worker source.
 - **ASSUMPTION-001**: GitHub Pages project hosting is the production target,
   and its site uses HTTPS.
 - **ASSUMPTION-002**: Current `geolocator`, `shared_preferences`,

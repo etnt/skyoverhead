@@ -1,4 +1,4 @@
-const pagesOriginEnvKey = "PAGES_ORIGIN";
+const ALLOWED_ORIGIN = "https://etnt.github.io";
 const OPEN_SKY_PATH = "/opensky/api/states/all";
 const OPEN_SKY_URL = "https://opensky-network.org/api/states/all";
 const ADSBDB_PATH_PREFIX = "/adsbdb/v0/aircraft/";
@@ -48,9 +48,9 @@ function routeFor(url) {
 }
 
 export default {
-  async fetch(request, env) {
+  async fetch(request) {
     const origin = request.headers.get("Origin");
-    if (!origin || origin !== env[pagesOriginEnvKey]) {
+    if (!origin || origin !== ALLOWED_ORIGIN) {
       return jsonResponse({ error: "origin_not_allowed" }, 403, null);
     }
 
