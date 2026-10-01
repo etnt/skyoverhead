@@ -108,6 +108,41 @@ Open the published HTTPS site in Chrome. Make sure that the app gets data from
 OpenSky and ADSBDB without CORS errors. A successful preflight does not prove
 that the upstream APIs returned data.
 
+## Worker observability
+
+`cloudflare/opensky-proxy/wrangler.toml` enables persisted Workers Logs. The
+settings are:
+
+```toml
+[observability]
+enabled = true
+head_sampling_rate = 1
+
+[observability.logs]
+invocation_logs = false
+```
+
+Invocation logs are off because they include full request URLs. OpenSky URLs
+contain observer coordinates. Custom `console.log` and `console.error` records
+are still stored. Wrangler does not need a `persist` setting for these logs.
+
+The Worker records these events:
+
+- `request_rejected`: rejected origin, route, or method.
+- `upstream_request_started`: route, method, and Cloudflare request ID.
+- `upstream_response`: route, upstream status, and elapsed time.
+- `upstream_fetch_failed`: route, error type, and elapsed time.
+
+To read stored logs, open Cloudflare Workers & Pages, select
+`skyoverhead-api-proxy`, then open `Observability`. For live logs, open `Logs` and
+select `Live`. You can also run `npx wrangler tail` from
+`cloudflare/opensky-proxy/`.
+
+If an `upstream_request_started` event has no matching response or failure
+event, the proxy did not complete the upstream request. If the failure event
+appears, read its error type. The log fields do not contain the request query.
+
+
 ## Security and limits
 
 Keep `CLOUDFLARE_API_TOKEN` in GitHub Actions secrets. Never add it to source
@@ -130,6 +165,8 @@ endpoint.
 - [Cloudflare GitHub Actions guide][cloudflare-actions]
 - [`workers.dev` guide][workers-dev]
 - [GitHub Pages documentation][github-pages]
+- [Cloudflare Workers Logs][worker-logs]
+- [Cloudflare real-time logs][worker-live-logs]
 
 [pwa-plan]: ../plan/feature-pwa-implementation-1.md
 [account]:
@@ -143,3 +180,7 @@ endpoint.
 [workers-dev]:
   https://developers.cloudflare.com/workers/configuration/routing/workers-dev/
 [github-pages]: https://docs.github.com/en/pages
+[worker-logs]:
+  https://developers.cloudflare.com/workers/observability/logs/workers-logs/
+[worker-live-logs]:
+  https://developers.cloudflare.com/workers/observability/logs/real-time-logs/

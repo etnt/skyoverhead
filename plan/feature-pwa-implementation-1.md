@@ -2,7 +2,7 @@
 goal: Implement an installable Sky Overhead PWA without breaking Android
 version: 1.0
 date_created: 2026-09-30
-last_updated: 2026-09-30
+last_updated: 2026-10-01
 owner: Sky Overhead maintainers
 status: In progress
 tags:
@@ -34,8 +34,18 @@ API requests.
   denied or unavailable. Browser GPS requires HTTPS and user permission.
 - **REQ-005**: Keep `shared_preferences` for Collector data. Browser storage can
   be cleared by the user or browser, so document this behavior.
+- **REQ-006**: Show the classified Web failure and diagnostic code, not only a
+  generic error title. Never display raw exception text or upstream response
+  bodies.
+- **REQ-007**: Build the Pages app with the latest reachable `v*` Git tag as
+  `APP_VERSION`. Keep local `dev` fallback and Android tag builds unchanged.
 - **SEC-001**: The Worker must allow only the app's configured origin and the
   fixed OpenSky and ADSBDB endpoints. It must not accept arbitrary target URLs.
+- **SEC-002**: Do not log full Worker request URLs or query parameters. OpenSky
+  query parameters contain observer coordinates. Log route names, outcomes,
+  status codes, durations, and request IDs only.
+- **SEC-003**: Do not show raw transport exceptions, API response bodies, or
+  request URLs in the UI. These can contain private or location data.
 - **CON-001**: Use GitHub Pages project-site paths. Build Flutter Web with the
   repository path as `--base-href`.
 - **CON-002**: Set `ALLOWED_ORIGIN` in Worker source to
@@ -110,6 +120,12 @@ and CORS preflight `OPTIONS` requests. Return `Access-Control-Allow-Origin`
 only for `ALLOWED_ORIGIN` (`https://etnt.github.io`). Reject unknown origins,
 methods, and paths.
 
+Enable Workers Logs in `wrangler.toml`. The Worker emits structured events for
+rejected requests, upstream request start, upstream response status and elapsed
+time, and fetch failures. Invocation logs are disabled because full request URLs
+contain observer coordinates. Custom logs must not contain URLs, query
+parameters, or response bodies.
+
 TASK-005 details: Add `lib/src/config/web_config.dart` with the
 `WEB_API_PROXY_BASE_URL` compile-time value. Add
 `lib/src/data/web_proxy_transport.dart` to rewrite only the two known API
@@ -147,8 +163,8 @@ Include the existing 192px and 512px manifest sizes, maskable icons, and an
 Apple touch icon. Keep the manifest start URL and Flutter base URL compatible
 with the GitHub Pages project path.
 
-TASK-008 details: Add `.github/workflows/deploy-web.yml` with `push` and
-`workflow_dispatch` triggers. Deploy on pushes to the default branch. Use
+TASK-008 details: Add `.github/workflows/deploy-web.yml` with pushes to the
+default branch, pushes of `v*` tags, and `workflow_dispatch`. Use
 `cloudflare/wrangler-action@v4` to update the existing Worker from
 `cloudflare/opensky-proxy`. Set `apiToken` and `accountId` from GitHub secrets.
 Use `command: deploy`; the Worker reads the allowlist from `ALLOWED_ORIGIN` in
@@ -159,15 +175,40 @@ variable or `https://skyoverhead-api-proxy.kruskakli.workers.dev`. Pass it as
 with GitHub Pages Actions. Do not expose Cloudflare secrets to pull requests.
 
 TASK-009 details: Add `docs/cloudflare-worker-setup.md` with Cloudflare account,
-Worker, token, allowed-origin, and repository variable setup. Update `README.md`
-with a link to the guide, the GitHub Pages URL pattern, PWA installation steps
-for Chrome and iOS Safari, HTTPS GPS permission requirements, manual coordinate
-fallback, Collector persistence, and the risk of browser data removal. State
-that the app requires a network connection and does not provide offline access.
+Worker, token, allowed-origin, observability, and repository variable setup.
+Explain where to view Worker logs and how to diagnose network-filter CORS errors.
+Update `README.md` with a link to the guide, the GitHub Pages URL pattern, PWA
+installation steps for Chrome and iOS Safari, HTTPS GPS requirements, manual
+coordinate fallback, Collector storage limits, tagged Web version, and
+online-only API behavior.
 
-### Implementation Phase 4: Verify the web and Android user paths
 
-- **GOAL-004**: Prove the published PWA works and Android release behavior stays
+### Implementation Phase 4: Show Web errors and release version
+
+- **GOAL-004**: Show useful, safe error details and the current release tag in
+  the Web app.
+
+| Task | Description | Completed | Date |
+|------|-------------|-----------|------|
+| TASK-013 | Show classified errors and codes in the Web UI. | ✅ | 2026-10-01 |
+| TASK-014 | Build Pages with the latest reachable version tag. | ✅ | 2026-10-01 |
+
+TASK-013 details: Add `titleForError(IdentifyError)` in
+`lib/src/data/errors.dart` and use it in `HomeScreen` instead of the generic
+failure title. Show the existing safe message and `IdentifyError.name` as a
+diagnostic code. Do not display raw exceptions, response bodies, or URLs. Update
+`test/widget_test.dart` to verify the timeout category and diagnostic code.
+
+TASK-014 details: Set `actions/checkout` `fetch-depth: 0` so Git tags are
+available. Resolve the latest reachable `v*` tag with
+`git describe --tags --abbrev=0 --match 'v[0-9]*'`. Pass the tag as
+`--dart-define=APP_VERSION` to the Pages Web build. When a `v*` tag triggers the
+workflow, use that tag. Keep the local `dev` fallback and Android release
+workflow's `github.ref_name` value.
+
+### Implementation Phase 5: Verify the web and Android user paths
+
+- **GOAL-005**: Prove the published PWA works and Android release behavior stays
   intact.
 
 | Task | Description | Completed | Date |
@@ -177,9 +218,9 @@ that the app requires a network connection and does not provide offline access.
 | TASK-012 | Smoke-test Android GPS, APIs, and Collector behavior. | | |
 
 TASK-010 details: Run `flutter analyze lib test integration_test`,
-`flutter test`, `flutter build web --release` with the production base href and
-Worker URL, and `flutter build apk --debug`. Keep the existing
-`.github/workflows/release.yml` Android release build and APK outputs unchanged.
+`flutter test`, `flutter build web --release` with the production base href,
+Worker URL, and latest reachable `APP_VERSION`, and `flutter build apk --debug`.
+Keep the existing Android release artifacts unchanged.
 
 TASK-011 details: Open the HTTPS Pages URL in Chrome. Confirm the page loads at
 the repository path, the browser makes successful OpenSky and ADSBDB requests,
@@ -232,13 +273,15 @@ merging the production deployment.
 - **FILE-005**: `web/index.html`, `web/manifest.json`, and `web/icons/`. Set
   branded PWA and Apple installation metadata.
 - **FILE-006**: `.github/workflows/deploy-web.yml`. Deploy the Worker and Pages
-  app without changing Android release workflow behavior.
+  app, and inject the latest reachable version tag in the Web build.
 - **FILE-007**: `README.md`. Document PWA use and browser limitations.
 - **FILE-008**: `test/web_proxy_transport_test.dart`,
   `test/transport_error_classifier_test.dart`, and
   `integration_test/app_test.dart`. Test proxy routing and airport data.
 - **FILE-009**: `docs/cloudflare-worker-setup.md`. Describe Worker setup,
-  token scope, GitHub variables, deployment, and CORS checks.
+  log access, token scope, deployment, and CORS troubleshooting.
+- **FILE-010**: `lib/src/data/errors.dart`, `lib/src/ui/home_screen.dart`, and
+  `test/widget_test.dart`. Show classified errors and safe diagnostic codes.
 
 ## 6. Testing
 
@@ -253,6 +296,12 @@ merging the production deployment.
   coordinates, browser persistence after reload, and PWA standalone launch.
 - **TEST-007**: Android smoke checks pass for GPS, direct API requests, manual
   coordinates, and Collector persistence after restart.
+- **TEST-008**: Worker logs include route, outcome, response status, and elapsed
+  time without including API query parameters or observer coordinates.
+- **TEST-009**: The error widget shows the classified title, safe message, and
+  `IdentifyError` code. It does not show raw exception text, URLs, or bodies.
+- **TEST-010**: A Pages build with the latest reachable `v*` tag shows that tag
+  beside the app name instead of `dev`. Android tag builds remain unchanged.
 
 ## 7. Risks & Assumptions
 
@@ -279,3 +328,4 @@ merging the production deployment.
 - [Cloudflare Worker setup guide](../docs/cloudflare-worker-setup.md)
 - [Flutter Web deployment](https://docs.flutter.dev/deployment/web)
 - [Cloudflare Workers documentation](https://developers.cloudflare.com/workers/)
+- [Cloudflare Workers Logs](https://developers.cloudflare.com/workers/observability/logs/workers-logs/)

@@ -4,9 +4,15 @@ import worker from "../src/index.js";
 
 const pagesOrigin = "https://etnt.github.io";
 const originalFetch = globalThis.fetch;
+const originalConsoleLog = console.log;
+const originalConsoleWarn = console.warn;
+const originalConsoleError = console.error;
 
 afterEach(() => {
   globalThis.fetch = originalFetch;
+  console.log = originalConsoleLog;
+  console.warn = originalConsoleWarn;
+  console.error = originalConsoleError;
 });
 
 function request(path, { method = "GET", origin = pagesOrigin } = {}) {
@@ -36,6 +42,32 @@ test("forwards OpenSky requests and preserves every query parameter", async () =
   assert.equal(response.headers.get("Access-Control-Allow-Origin"), pagesOrigin);
   assert.match(response.headers.get("Content-Type"), /^application\/json/);
   assert.deepEqual(await response.json(), { states: [] });
+});
+
+test("logs route and response timing without observer coordinates", async () => {
+  const entries = [];
+  console.log = (entry) => entries.push(entry);
+  globalThis.fetch = async () => Response.json({ states: [] });
+
+  await worker.fetch(
+    request(
+      "/opensky/api/states/all?lamin=59.059807&lomin=17.540289&lamax=59.5&lomax=18.5",
+    ),
+  );
+
+  assert.deepEqual(
+    entries.map((entry) => entry.event),
+    ["upstream_request_started", "upstream_response"],
+  );
+  assert.equal(entries[0].route, "opensky");
+  assert.equal(entries[1].route, "opensky");
+  assert.equal(entries[1].status, 200);
+  assert.equal(typeof entries[1].durationMs, "number");
+
+  const logText = JSON.stringify(entries);
+  assert.equal(logText.includes("59.059807"), false);
+  assert.equal(logText.includes("17.540289"), false);
+  assert.equal(logText.includes("lamin"), false);
 });
 
 test("forwards ADSBDB aircraft lookups with the optional callsign", async () => {
@@ -146,7 +178,9 @@ test("rejects invalid ADSBDB aircraft IDs and unapproved query parameters", asyn
   }
 });
 
-test("returns an explicit CORS-safe 502 when upstream fetch fails", async () => {
+test("returns an explicit CORS-safe 502 and logs the upstream error class", async () => {
+  const errors = [];
+  console.error = (entry) => errors.push(entry);
   globalThis.fetch = async () => {
     throw new Error("network failure");
   };
@@ -157,6 +191,13 @@ test("returns an explicit CORS-safe 502 when upstream fetch fails", async () => 
   assert.equal(response.headers.get("Access-Control-Allow-Origin"), pagesOrigin);
   assert.match(response.headers.get("Content-Type"), /^application\/json/);
   assert.deepEqual(await response.json(), { error: "upstream_fetch_failed" });
+  assert.equal(errors.length, 1);
+  assert.equal(errors[0].event, "upstream_fetch_failed");
+  assert.equal(errors[0].route, "opensky");
+  assert.equal(errors[0].status, 502);
+  assert.equal(errors[0].errorName, "Error");
+  assert.equal(typeof errors[0].durationMs, "number");
+  assert.equal(JSON.stringify(errors).includes("network failure"), false);
 });
 
 test("preserves non-JSON upstream statuses and retry headers", async () => {

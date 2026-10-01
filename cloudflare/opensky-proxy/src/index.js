@@ -23,11 +23,15 @@ function jsonResponse(payload, status, origin) {
   });
 }
 
+function logEvent(event, details) {
+  console.log({ service: "skyoverhead-api-proxy", event, ...details });
+}
+
 function routeFor(url) {
   if (url.pathname === OPEN_SKY_PATH) {
     const upstream = new URL(OPEN_SKY_URL);
     upstream.search = url.search;
-    return upstream;
+    return { name: "opensky", url: upstream };
   }
 
   if (url.pathname.startsWith(ADSBDB_PATH_PREFIX)) {
@@ -41,7 +45,7 @@ function routeFor(url) {
 
     const upstream = new URL(`${ADSBDB_URL_PREFIX}${icao24}`);
     if (callsigns.length === 1) upstream.searchParams.set("callsign", callsigns[0]);
-    return upstream;
+    return { name: "adsbdb", url: upstream };
   }
 
   return null;
@@ -49,14 +53,30 @@ function routeFor(url) {
 
 export default {
   async fetch(request) {
+    const startedAt = Date.now();
+    const requestId = request.headers.get("CF-Ray");
     const origin = request.headers.get("Origin");
+    const url = new URL(request.url);
+    const route = routeFor(url);
+
     if (!origin || origin !== ALLOWED_ORIGIN) {
+      console.warn({
+        service: "skyoverhead-api-proxy",
+        event: "request_rejected",
+        reason: "origin_not_allowed",
+        origin: origin ?? "missing",
+        method: request.method,
+        requestId,
+      });
       return jsonResponse({ error: "origin_not_allowed" }, 403, null);
     }
 
-    const url = new URL(request.url);
-    const upstream = routeFor(url);
-    if (!upstream) {
+    if (!route) {
+      logEvent("request_rejected", {
+        reason: "route_not_allowed",
+        method: request.method,
+        requestId,
+      });
       return jsonResponse({ error: "route_not_allowed" }, 404, origin);
     }
 
@@ -65,21 +85,64 @@ export default {
         "Access-Control-Request-Method",
       );
       if (requestedMethod !== null && requestedMethod !== "GET") {
+        logEvent("request_rejected", {
+          reason: "method_not_allowed",
+          route: route.name,
+          method: request.method,
+          requestId,
+        });
         return jsonResponse({ error: "method_not_allowed" }, 405, origin);
       }
+      logEvent("request_completed", {
+        route: route.name,
+        method: request.method,
+        status: 204,
+        durationMs: Date.now() - startedAt,
+        requestId,
+      });
       return new Response(null, { status: 204, headers: corsHeaders(origin) });
     }
 
     if (request.method !== "GET") {
+      logEvent("request_rejected", {
+        reason: "method_not_allowed",
+        route: route.name,
+        method: request.method,
+        requestId,
+      });
       return jsonResponse({ error: "method_not_allowed" }, 405, origin);
     }
 
+    logEvent("upstream_request_started", {
+      route: route.name,
+      method: request.method,
+      requestId,
+    });
+
     let response;
     try {
-      response = await fetch(upstream.toString(), { method: "GET" });
-    } catch {
+      response = await fetch(route.url.toString(), { method: "GET" });
+    } catch (error) {
+      console.error({
+        service: "skyoverhead-api-proxy",
+        event: "upstream_fetch_failed",
+        route: route.name,
+        method: request.method,
+        status: 502,
+        errorName: error instanceof Error ? error.name : "unknown",
+        durationMs: Date.now() - startedAt,
+        requestId,
+      });
       return jsonResponse({ error: "upstream_fetch_failed" }, 502, origin);
     }
+
+    logEvent("upstream_response", {
+      route: route.name,
+      method: request.method,
+      status: response.status,
+      durationMs: Date.now() - startedAt,
+      requestId,
+    });
 
     const headers = corsHeaders(origin);
     const contentType = response.headers.get("Content-Type");

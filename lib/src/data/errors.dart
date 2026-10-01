@@ -12,6 +12,30 @@ enum IdentifyError {
   openskyBadResponse,
 }
 
+/// Short, user-visible title for each classified identification failure.
+String titleForError(IdentifyError code) {
+  switch (code) {
+    case IdentifyError.notConfigured:
+      return 'Location not set';
+    case IdentifyError.networkUnavailable:
+      return 'Network error';
+    case IdentifyError.dnsFailed:
+      return 'Aircraft service host not found';
+    case IdentifyError.tlsFailed:
+      return 'Secure connection failed';
+    case IdentifyError.openskyTimeout:
+      return 'OpenSky request timed out';
+    case IdentifyError.openskyRateLimited:
+      return 'OpenSky rate limit reached';
+    case IdentifyError.openskyUnauthorized:
+      return 'OpenSky rejected the request';
+    case IdentifyError.openskyUnavailable:
+      return 'OpenSky is unavailable';
+    case IdentifyError.openskyBadResponse:
+      return 'Invalid response from OpenSky';
+  }
+}
+
 /// Thrown by the data layer to signal a classified failure.
 class IdentifyException implements Exception {
   final IdentifyError code;
@@ -34,7 +58,7 @@ String messageForError(IdentifyError code) {
     case IdentifyError.tlsFailed:
       return 'A secure connection to the aircraft service failed.';
     case IdentifyError.openskyTimeout:
-      return 'The aircraft service did not respond in time.';
+      return 'The OpenSky request did not return a response within 12 seconds.';
     case IdentifyError.openskyRateLimited:
       return 'The aircraft service is rate limiting requests. Try again shortly.';
     case IdentifyError.openskyUnauthorized:

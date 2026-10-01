@@ -147,7 +147,18 @@ void main() {
     await tester.tap(find.text("What's overhead?"));
     await tester.pumpAndSettle();
 
-    expect(find.text('Something went wrong'), findsOneWidget);
+    expect(find.text('OpenSky request timed out'), findsOneWidget);
+    expect(
+      find.textContaining(
+        'The OpenSky request did not return a response within 12 seconds.',
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.textContaining('Diagnostic code: openskyTimeout'),
+      findsOneWidget,
+    );
+    expect(find.text('Something went wrong'), findsNothing);
     expect(find.text('Try again'), findsOneWidget);
   });
 }

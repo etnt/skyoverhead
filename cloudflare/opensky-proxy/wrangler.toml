@@ -2,3 +2,11 @@ name = "skyoverhead-api-proxy"
 main = "src/index.js"
 workers_dev = true
 compatibility_date = "2026-09-30"
+
+[observability]
+enabled = true
+head_sampling_rate = 1
+
+[observability.logs]
+invocation_logs = false
+

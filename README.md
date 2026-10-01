@@ -22,6 +22,9 @@ After the Pages workflow deploys the app, open
 browser menu. On iPhone or iPad, open the site in Safari, tap **Share**, then
 **Add to Home Screen**. The installed app opens in standalone mode.
 
+The app bar shows the latest reachable release tag on Pages. Local builds show
+`dev`.
+
 Browser location access requires HTTPS and your permission. If GPS is denied or
 unavailable, use **Enter location** to set coordinates manually. Collector data
 is stored in this browser's local storage; the browser or user can clear it, and

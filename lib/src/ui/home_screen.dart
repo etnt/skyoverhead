@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../config/app_version.dart';
+import '../data/errors.dart';
 import '../data/update_service.dart';
 import '../domain/reward.dart';
 import '../state/collector_provider.dart';
@@ -131,8 +132,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       onPressed: isLoading
                           ? null
                           : () => ref
-                              .read(identifyControllerProvider.notifier)
-                              .identify(config),
+                                .read(identifyControllerProvider.notifier)
+                                .identify(config),
                       icon: const Icon(Icons.flight),
                       label: const Padding(
                         padding: EdgeInsets.symmetric(vertical: 8),
@@ -144,8 +145,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     const SizedBox(width: 12),
                     _MedalToggleButton(
                       active: showMedalView,
-                      onPressed: () =>
-                          setState(() => _showMedal = !_showMedal),
+                      onPressed: () => setState(() => _showMedal = !_showMedal),
                     ),
                   ],
                 ],
@@ -222,8 +222,8 @@ class _RankView extends ConsumerWidget {
       subtitle = next == null
           ? 'Top rank — Air Marshal achieved!'
           : '${standing.toNext} more '
-              '${standing.toNext == 1 ? 'destination' : 'destinations'} '
-              'to ${next.name}';
+                '${standing.toNext == 1 ? 'destination' : 'destinations'} '
+                'to ${next.name}';
     }
 
     return Center(
@@ -274,8 +274,7 @@ class _RankView extends ConsumerWidget {
             ),
             const SizedBox(height: 12),
             TextButton.icon(
-              onPressed: () =>
-                  ref.read(selectedTabProvider.notifier).state = 2,
+              onPressed: () => ref.read(selectedTabProvider.notifier).state = 2,
               icon: const Icon(Icons.military_tech),
               label: const Text('View all medals'),
             ),
@@ -324,11 +323,11 @@ class _ResultArea extends ConsumerWidget {
           title: 'Clear skies',
           message: result.message ?? 'No aircraft overhead right now.',
         );
-      case IdentifyFailure(:final message):
+      case IdentifyFailure(:final code, :final message):
         return _Centered(
           icon: Icons.error_outline,
-          title: 'Something went wrong',
-          message: message,
+          title: titleForError(code),
+          message: '$message\nDiagnostic code: ${code.name}',
           action: FilledButton.tonal(
             onPressed: () {
               final config = ref.read(identifyConfigProvider);
@@ -380,10 +379,7 @@ class _Centered extends StatelessWidget {
               ),
             ),
           ),
-          if (action != null) ...[
-            const SizedBox(height: 16),
-            action!,
-          ],
+          if (action != null) ...[const SizedBox(height: 16), action!],
         ],
       ),
     );
