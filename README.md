@@ -16,6 +16,12 @@ the best match enriched with route and registration details.
 
 ## Web app (PWA)
 
+**NOTE: The Web app, currently, does not work!** This due to problems dealing
+with the CORS handling. The attempted workaround, using a Cloudflare proxy worker,
+fails (probably) due to Opensky blocking requests coming from Cloudflare.
+You could get this to work by hosting the proxy somewhere that isn't a
+hyperscaler range, for example a small VPS or a home server.
+
 After the Pages workflow deploys the app, open
 `https://etnt.github.io/skyoverhead/` over HTTPS. In Chrome, choose
 **Install app** (or **Add to Home screen**) from the
